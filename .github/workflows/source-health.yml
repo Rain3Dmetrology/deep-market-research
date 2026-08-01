@@ -1,0 +1,52 @@
+name: Source Health
+
+on:
+  schedule:
+    - cron: '0 6 * * *'   # daily 06:00 UTC
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  source-health:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install pyyaml
+
+      # Runs run_probe() + check_consistency() in one pass. The process exit
+      # code is check_consistency()'s result: a blocking item (a DEPRECATED
+      # source still referenced as an active route) fails the build; warning
+      # level parity findings do NOT block the PR.
+      - name: Run source health probe + consistency gate
+        run: python scripts/source_health.py --registry sources.registry.yaml --out parity_report.json
+        env:
+          # Optional source credentials. When a secret is unset the matching
+          # probe is skipped (no penalty) rather than flagged DEAD.
+          FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
+          MODELSCOPE_TOKEN: ${{ secrets.MODELSCOPE_TOKEN }}
+          TWITTER_BEARER_TOKEN: ${{ secrets.TWITTER_BEARER_TOKEN }}
+          FIRECRAWL_API_KEY: ${{ secrets.FIRECRAWL_API_KEY }}
+          EXA_API_KEY: ${{ secrets.EXA_API_KEY }}
+          TAVILY_API_KEY: ${{ secrets.TAVILY_API_KEY }}
+          ZHIHU_TOKEN: ${{ secrets.ZHIHU_TOKEN }}
+          PATSNAP_TOKEN: ${{ secrets.PATSNAP_TOKEN }}
+          CONNECTED_PAPERS_TOKEN: ${{ secrets.CONNECTED_PAPERS_TOKEN }}
+          MIDU_APP_SECRET: ${{ secrets.MIDU_APP_SECRET }}
+          WECHAT_MP_TOKEN: ${{ secrets.WECHAT_MP_TOKEN }}
+
+      - name: Upload parity report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: parity-report
+          path: parity_report.json

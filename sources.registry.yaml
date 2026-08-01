@@ -1,0 +1,134 @@
+# dmr source health registry
+#
+# Every external URL uses a $ENV_VAR placeholder -- no secret is ever
+# hard-coded. A source whose $ENV_VAR is unset is SKIPPED (not penalised).
+#
+# layer:
+#   default    -> core zero-config research backbone; if DEAD/REGRESSED it
+#                 counts as an "uncovered dimension" (open_issue+mark_uncovered)
+#   optional   -> key-gated / platform-specific enhancement; death is backoff+log
+#   deprecated -> probe skipped; must NOT be referenced as an active route
+#
+# needs_key: whether a credential is required to probe (embedded as $ENV_VAR).
+
+# --- default layer (zero-config free APIs) ---------------------------------
+arxiv:
+  name: arXiv
+  url: https://export.arxiv.org/api/query?search_query=all:electron&max_results=1
+  layer: default
+  needs_key: false
+
+semantic_scholar:
+  name: Semantic Scholar
+  url: https://api.semanticscholar.org/graph/v1/paper/search?query=electron&limit=1
+  layer: default
+  needs_key: false
+
+crossref:
+  name: Crossref
+  url: https://api.crossref.org/works?query=electron&rows=1
+  layer: default
+  needs_key: false
+
+openalex:
+  name: OpenAlex
+  url: https://api.openalex.org/works?search=electron&per-page=1
+  layer: default
+  needs_key: false
+
+huggingface:
+  name: Hugging Face
+  url: https://huggingface.co/api/models?limit=1
+  layer: default
+  needs_key: false
+
+github:
+  name: GitHub
+  url: https://api.github.com/rate_limit
+  layer: default
+  needs_key: false
+
+# --- optional layer (key-gated / platform-specific) -------------------------
+modelscope:
+  name: ModelScope
+  url: https://modelscope.cn/api/v1/models?PageSize=1&PageNumber=1&access_token=$MODELSCOPE_TOKEN
+  layer: optional
+  needs_key: true
+
+reddit:
+  name: Reddit
+  url: https://www.reddit.com/r/all/hot.json?limit=1&raw_json=1
+  layer: optional
+  needs_key: false
+
+hn:
+  name: Hacker News
+  url: https://hn.algolia.com/api/v1/search?query=electron&tags=story&hitsPerPage=1
+  layer: optional
+  needs_key: false
+
+twitter_x:
+  name: Twitter/X
+  url: https://api.twitter.com/2/tweets/search/recent?query=electron&max_results=10&bearer_token=$TWITTER_BEARER_TOKEN
+  layer: optional
+  needs_key: true
+
+firecrawl:
+  name: Firecrawl
+  url: https://api.firecrawl.dev/v1/search?auth=$FIRECRAWL_API_KEY
+  layer: optional
+  needs_key: true
+
+exa:
+  name: Exa
+  url: https://api.exa.ai/search?api_key=$EXA_API_KEY
+  layer: optional
+  needs_key: true
+
+tavily:
+  name: Tavily
+  url: https://api.tavily.com/search?api_key=$TAVILY_API_KEY
+  layer: optional
+  needs_key: true
+
+zhihu:
+  name: Zhihu
+  url: https://api.zhihu.com/search?q=electron&api_key=$ZHIHU_TOKEN
+  layer: optional
+  needs_key: true
+
+patsnap:
+  name: Patsnap
+  url: https://api.patsnap.com/search?api_key=$PATSNAP_TOKEN
+  layer: optional
+  needs_key: true
+
+connected_papers:
+  name: Connected Papers
+  url: https://www.connectedpapers.com/api/v1/paper/search?query=electron&api_key=$CONNECTED_PAPERS_TOKEN
+  layer: optional
+  needs_key: true
+
+fred:
+  name: FRED
+  url: https://api.stlouisfed.org/fred/series?series_id=GNPCA&api_key=$FRED_API_KEY
+  layer: optional
+  needs_key: true
+  note: '宏观维度不进 dimensions_uncovered；死亡仅 backoff+log；宏观已由 WebSearch 无 key 覆盖'
+
+# --- deprecated (probe skipped; must not be referenced as active route) -----
+midu_hotsearch:
+  name: midu HotSearch
+  url: https://www.midu.com/api/hotsearch?app_secret=$MIDU_APP_SECRET
+  layer: deprecated
+  status: DEPRECATED
+  needs_key: true
+  note: '新版 midu.com 改 OAuth + 付费墙，MIDU_APP_SECRET 失效，信源已弃用'
+
+wechat_mp_rss:
+  name: WeChat MP RSS
+  url: https://wechat-mp.example.com/rss?token=$WECHAT_MP_TOKEN
+  layer: deprecated
+  status: DEPRECATED
+  needs_key: true
+  note: '微信公众账号文章改走 wechat-article-search skill + ReadGZH-Agent MCP，旧 RSS 桥接弃用'
