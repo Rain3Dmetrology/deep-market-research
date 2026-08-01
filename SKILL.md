@@ -2,12 +2,12 @@
 name: deep-market-research
 slug: deep-market-research
 displayName: Deep Market Research
-version: "2.3.1"
+version: "2.3.2"
 summary: 深度市场 / 竞品 / 技术趋势调研工作流，输出稳定、可复现、带引用溯源的研究报告。
 description: |
   深度市场 / 竞品 / 技术趋势调研工作流，输出稳定、可复现、带引用溯源的研究报告。
 
-  v2.3.1 核心能力：
+  v2.3.2 核心能力：
   • 确定性 Step 0→8 流水线（意图路由 → 检索 → 去重 → 评分 → 对抗审计 → 沉淀）
   • NATO 式 4 级源分级 + ≥2 源交叉验证（关键竞品参数 ≥3 源）
   • 主动去重 / 去陈旧 / 去伪造 / 去矛盾 4 道过滤 + 置信标签
@@ -64,14 +64,14 @@ compatibility: >
   HONESTY RULE: only list skills/connectors actually available in the environment.
   Firecrawl (and any other absent service) is NOT bundled and must never be claimed as integrated.
 metadata:
-  version: "2.3.1"
+  version: "2.3.2"
   author: "Rain / WorkBuddy"
   adapted_from: "sota-research (Rain3Dmetrology) + RSSnewsnowTrendRadar (Rain3Dmetrology) 三方三角验证与联网查证注入机制 + 行业趋势深度调研五大板块模板 + 公司竞品深度调研四维框架/7字段证据清单/SWOT/情景推演 + market-researcher 的 TAM/SAM/SOM 市场测算/竞品4类法/2D定位图(作可选透镜) + material-organizer 的去重阈值与逐字引用铁律 + llm-wiki 的 Karpathy 增量沉淀/Lint 操作 + 黄益贺精英级分析咨询系统(Coze) 的 OPTIONAL 分析透镜库(波特五力/PESTEL/3C/BCG/价值链) + aihot/news-summary 注册为可选数据源 + NATO Admiralty source code + Cat-Research self-validation loop"
 ---
 
 # Deep Market Research Workflow — 深度市场调研工作流
 
-> 版本: 2.3.1 | 许可证: MIT
+> 版本: 2.3.2 | 许可证: MIT
 > 设计目标：**输出质量稳定、可复现、去重去旧去假去矛盾、并吸收真实用户热评**。对行业/赛道/产业链类查询，额外输出麦肯锡白皮书风格的五大板块结构；对公司/竞品尽调类查询，额外输出四维分析、7字段证据清单、SWOT 与情景推演。
 
 ---
@@ -674,7 +674,7 @@ metadata:
 | 搜索入口 | 内置 `web_search` / `web_fetch`（首选）+ 🆓 免费 REST API（OpenAlex 等） | Firecrawl 🥇 / DeepWiki 🥇（keyless MCP）/ Exa 🥈 / Tavily 🥈 / Brave 🥉 / Perplexity 🎯 / Novada 🥈（免费 1000/月，npx）/ SearXNG 🛟（自托管 keyless） |
 | 社媒/热评 | `web_search` 通用社媒（Reddit / X / 知乎 / 微博 / 小红书等）+ WebFetch | agent-reach / agent-browser 🎯（平台特定，复用登录态抓评论）；UGC 仅作 T4 信号 |
 | 专利 | WebSearch 公开库（Google Patents / USPTO / EPO / WIPO） | patsnap-search MCP 🎯（若平台已连） |
-| 财经/财报 | WebSearch 公司官网 / 财报 / 财经媒体 | westock-mcp / tdx-connector MCP + markitdown 🎯（平台特定）· SEC EDGAR MCP 🥈（美股官方申报/财报 XBRL/内幕交易，免 key，仅需 User-Agent；`setup_mcp.py` 自动配） |
+| 财经/财报 | WebSearch 公司官网 / 财报 / 财经媒体 | westock-mcp / tdx-connector MCP + markitdown 🎯（平台特定） |
 | 企业工商/风险 | WebSearch 工商/司法公开信息 | tyc-mcp / qcc-company / qixinhuiyan-mcp 🎯（平台特定） |
 | 法律/合规 | WebSearch 法规/裁判文书公开信息 | wk-workbuddy / yuandian-mcp / pkulaw 🎯（平台特定） |
 | 代码/项目 | WebSearch + WebFetch GitHub Trending / Hugging Face | DeepWiki 🥇（keyless，仓库研究）/ github MCP + gh CLI 🥈（平台特定） |
@@ -825,7 +825,7 @@ A：能，且是 dmr 的差异化优势。dmr 原生支持中文源采集与中�
 
 ---
 
-## 附录 A：完整更新史（v2.0.0 → v2.3.1）
+## 附录 A：完整更新史（v2.0.0 → v2.3.2）
 
 - **v2.0.0**：竞争对位实测，验证 Step 0–8 主管线与源分级框架；确立 NATO Admiralty 4 级源分级与 ≥2 源交叉验证硬规则。
 - **v2.1.0**：吸收 9 个互补研究类 skill 的方法论（去其过度约束项，叠加不替换）；新增 intel-brief 输出风格（事实→影响→原因 + [矛盾] / [待核实] / [已证伪]）、宏观监测源、微信公众号文章检索、Perplexity AI 搜索、第 4 套学术 / 基准 / 技术选型 / 尽调模板 D。
@@ -842,3 +842,4 @@ A：能，且是 dmr 的差异化优势。dmr 原生支持中文源采集与中�
 - **v2.2.10**：可选搜索后端附录补强（源自《Agent搜索工具调研报告》审计，纯目录引用、零新硬依赖）。在「工具映射」表 AI 搜索(可选) 行 + frontmatter Search entry 增列 **AnySearch**（前置去重 + RRF，厂商自称 76.4% 标 [VENDOR CLAIM] 不写进质量声明）、**秘塔搜索**（国内 AI 搜索，含事实检验，按次计费，需 key）为 CN 场景可选增强；均标注「可选 / 需 Key / 非默认 / 无 key 优雅跳过」，不替 WebSearch、不动 Step 0→8 主管线、不接专有后端、不降搜索质量。本地 / 仓库 / 发布包三端统一为 v2.2.10。
 - **v2.3.0**：平台无关 + 深度研究闭环（去粗取精、泛化优先）。① **平台无关化**：默认零依赖零安装（仅 LLM 内置 `web_search` / `web_fetch` + 🆓 免费公开 REST API，如 OpenAlex / Semantic Scholar / Crossref / arXiv / PubMed 等免 key 直调），不假设任何平台 MCP 配置文件 / agent-team 编排协议 / 专有后端；可选工具（Exa / Firecrawl / Tavily / Perplexity / GPT Researcher / ModelScope 等）按平台接入、缺失即优雅降级。② **新增「三-B 深度研究闭环（平台无关，纯提示词编排）」**：吸收多平台深度研究 agent 团队精华（多轮迭代 / 章节级审稿 / 研究参数卡跨阶段共享 / 进度通报），去其平台专有约束，做成任意 agent 可复现的纯提示词闭环。③ **竞品关键参数交叉验证 ≥2 → ≥3**（质量规则 18，普通事实维持 ≥2 控成本）。④ **质量规则增 19（可选工具非质量前提）/ 20（不绑定特定平台机制）**。⑤ **新增 references/cross-platform-tools.md**（WorkBuddy / Claude / Codex / Trae / qoder / Cursor 六平台可选工具接入指南）。⑥ **隐私修正**：云端 SKILL.md 移除个人 MCP 连接状态声明（GitHub / ModelScope / 知乎等的"已连"表述、个人 token 等个人状态），云端仅声明连接器类型、缺失即优雅降级，个人连接状态仅留本地 skill；本地 / 仓库 / 发布包三端统一为 v2.3.0。
 - **v2.3.1**：MCP 鉴权前缀修复 + 跨机器同步 + 可选源增补（维护性小版本，主管线零变动）。① **MCP 鉴权前缀 BUG 修复（全局）**：原 mcp.json 的 env 类 server 带 `APIKEY:` / `access token：` 前缀 → 上游 API 全 401 拒；修正为裸 token 后 Exa / Firecrawl / HF / ModelScope / Tavily 全部 HTTP 200。② **Tavily MCP** 从 mcp-remote（强制浏览器 OAuth）改用官方 `tavily-mcp` stdio 包 → 无头免 OAuth。③ **Zhihu MCP 端点** 从 `/mcp/.../sse` 纠正为 `/api/mcp/.../v1/sse` 并强制 `--transport sse-only`，3 端点（搜索/可信全网/热榜）实测 initialize + tools/list + tools/call 全部返回真实知乎数据。④ **跨机器同步 `scripts/setup_mcp.py`**：零硬编码 key、自动剥前缀（Rule 1）、生成 mcp.json + dmr_keys.env。⑤ **新增可选源**：FRED（结构化经济数据，✅ 吸收）/ Novada（兜底解锁层，✅）/ Connected Papers（深度尽调可选源，✅）/ agent-reach（实测 6 社媒+5 基础 社媒增强层，✅ 已激活；**抖音/微博 走 web_search 兜底，公众号走 wechat-article-search skill**）/ agent-browser（⚠️ 仅交互兜底）/ AnySearch（❌ 不吸收，重叠）；⑥ **midu-hotsearch 弃用**（新版 midu.com 改 OAuth + 付费墙，原 `MIDU_APP_SECRET` 失效，错误码 202005/203003，不进 README 终态清单）；⑦ **新增 wallstreetcn 免费财经热榜**（免 key，替代蜜度热榜）；⑧ **新增 `scripts/fred_query.py`**；⑨ **新增 SEC EDGAR MCP**（美股官方申报/财报 XBRL/内幕交易 Form 4，免 API key 仅需 `SEC_EDGAR_USER_AGENT`；`stefanoamorelli/sec-edgar-mcp` 经 uvx 运行，补 dmr 美股结构化申报空白，归 🟡 需连 MCP）；⑩ **学术/社区源文档精度修正**（无功能变动，仅文档准确性）：Semantic Scholar 补"无 key 限 ~100 req/5min·IP，免费 key 提额"、literature-search 注明"非可调用 API"、Hugging Face 补"gated 模型需登录+接受 EULA 才能下载"、Hacker News 注明"Algolia 端点（Firebase 2023 已停服）"、Reddit 注明"2023 起需 OAuth 走 agent-reach/web_search 兜底"，并标注 HN 部分出口 IP 被 Algolia WAF 屏蔽时回退 web_search。本地 / 仓库 / 发布包三端统一为 v2.3.1。
+- **v2.3.2**：P0 密钥卫生 + 健壮性修复 + 依赖清理（维护性补丁，主管线零变动）。① 密钥卫生：`.gitignore` 忽略 `dmr_keys.env`/`mcp.json`/`*.env`，`setup_mcp.py` 写后 `chmod 600` + 仓库内告警守卫；② `fred_query.py` 前缀正则对齐 `setup_mcp.py`、`load_key()` env 剥前缀、observations URL 编码；③ 源健康监控原型 + 首个真实测试（8 测全过）；④ 移除失效的 SEC EDGAR MCP 生成块（上游 404，美股结构化维度回退 `web_search`）。本地 / 仓库 / 发布包三端统一为 v2.3.2。

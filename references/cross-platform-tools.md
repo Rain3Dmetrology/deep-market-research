@@ -51,7 +51,6 @@
 | douyinmcp | 抖音**深度内容 + 热榜**（搜索/视频详情/评论/用户/首页流 + `get_homefeed`） | 本地 MCP（需 `cookies.txt` 登录 Cookie + `a_bogus` 本地 V8 签名） | 免费（需自维护 Cookie） | 🎯 个性化（抖音深度 + 热榜） | 本地 `py_mini_racer` 生成 `a_bogus` 签名，免外部签名服务；需有效抖音登录 Cookie（频繁失效）+ Python 3.14+/uv。Cookie 含敏感信息，只存本地，绝不进云端。**优先免费方案**；规模化稳定需求见 TikHub。**🆕 `get_homefeed` 工具可作抖音实时热榜信号源（已 8/8 工具激活，替代 midu 的抖音维度）** |
 | wallstreetcn（华尔街见闻） | **实时财经热榜/要闻/快讯**（A股/美股/港股/全球/外汇/黄金/原油/数字货币等 5+ 频道） | REST API `https://api-one.wallstcn.com/apiv1/content/{articles,lives,hots,hot-rank}?channel=...&limit=...` | 免费、免 key、无频率声明 | 🛟 兜底（财经热榜信号）| 2026-07 实测 5 频道 + 4 端点全 HTTP 200，实时数据（文章/快讯/热榜）。**替代 midu-hotsearch 的金融维度**，中文财经研究首选；与 douyinmcp 互补（抖音用 douyinmcp、财经用本源）。不进核心管线 |
 | TikHub API | 微信+抖音**结构化数据**（公众号文章+阅读数/赞/评论；抖音视频/评论/搜索/榜单/星图） | REST API（`api.tikhub.io`，大陆用 `api.tikhub.dev`） | $0.001/请求（首充 $0.05≈50 次） | 🎯 个性化（稳定契约） | 付费但稳定（99.9% SLA，10 RPS），免中国开发者资质；主域大陆被墙→用 `.dev`。key 本地仅存。**优先用免费 douyinmcp/ReadGZH**，规模化/高稳定需求再上 TikHub |
-| SEC EDGAR MCP | 美股**官方申报/财报结构化数据**（10-K/10-Q/8-K 全文、XBRL 财报、内线交易 Form 4/345、公司 Facts） | 本地 MCP（`uvx sec-edgar-mcp`），免 API key，仅需 `SEC_EDGAR_USER_AGENT`（name+email，非密钥，SEC 强制） | 免费、官方、无限额（SEC 礼貌访问限频，UA 必填） | 🥈 备选（美股结构化） | SEC 官方数据源，补 dmr **美股结构化申报/财报空白**（web_search 只能抓网页、拿不到 XBRL 结构化字段）；`stefanoamorelli/sec-edgar-mcp`（AGPL-3.0，uvx 免装运行）。免 key≠零配置 → 归 🟡（需连 MCP + 配 User-Agent）。不进核心管线 |
 
 ### 1.3 不推荐 / 仅特定场景
 
@@ -175,31 +174,6 @@
 ```
 > Cookie / key 仅本地；缺失任一工具 → 回退 `web_search`，不中断主管线。
 
-### 2.z 美股官方申报 / 财报（SEC EDGAR MCP · 可选）
-
-> 定位：美股研究常需**结构化**申报数据（10-K/10-Q 风险因子与财报附注、8-K 重大事件、XBRL 科目级财报、内线交易 Form 4/345）。`web_search` 只能抓新闻/网页，拿不到 XBRL 结构化字段；SEC EDGAR MCP 提供官方结构化访问，二者互补、不重叠。缺失则回退 `web_search` + 免费 API（如 OpenAlex 不覆盖，仅标注"未覆盖美股结构化申报维度"）。
-
-**SEC EDGAR MCP**（`stefanoamorelli/sec-edgar-mcp`，AGPL-3.0，v1.0.8，免 API key）：
-- 工具：Company（`lookup_company_cik` / `get_company_info` / `get_company_facts`）、Filings（`get_recent_filings` / `get_filing_content` / `analyze_8k_filing`）、Financials（`get_financial_statements` / `extract_financial_data` XBRL）、Insider（`get_insider_transactions` / `analyze_form_345`）
-- 费用：免费、官方、无限额；SEC 强制要求 `SEC_EDGAR_USER_AGENT`（name+email，**属个人信息·等同 API key 保管，仅本地提供、绝不提交仓库**，SEC 用于礼貌访问与限频追踪）
-- 运行：`uvx --from git+https://github.com/stefanoamorelli/sec-edgar-mcp.git sec-edgar-mcp`（与 huggingface/modelscope 一致，免本地安装）
-- 配置（WorkBuddy `~/.workbuddy/mcp.json`）：
-
-```json
-{
-  "mcpServers": {
-    "sec-edgar-mcp": {
-      "command": "uvx",
-      "args": ["--from", "git+https://github.com/stefanoamorelli/sec-edgar-mcp.git", "sec-edgar-mcp"],
-      "env": { "SEC_EDGAR_USER_AGENT": "<你的姓名> <your-email@example.com>" }
-    }
-  }
-}
-```
-
-> 真实 `SEC_EDGAR_USER_AGENT` **仅存于本地 `SECEDGAR_UA.txt`（桌面），由 `scripts/setup_mcp.py` 自动读取注入，等同 API key 保管——绝不写进仓库 / Release / dmr_keys.env**。上例为占位符，请替换为你的真实 UA。缺失 → 回退 `web_search`，不中断主管线。
-
----
 
 ### 2.2 Claude（Claude CLI / Desktop）
 

@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [2.3.2] - 2026-08-02
 
 ### Added
 - 源健康监控原型（maintainer-side CI）：
@@ -18,11 +18,10 @@
 ### Deprecated
 - **midu-hotsearch 弃用原因**（从 README 迁出，遵循 Rule 5）：新版 midu.com 改为 OAuth + 付费墙，原 `MIDU_APP_SECRET` 失效（错误码 202005/203003），故不进 README 终态清单；已由 **wallstreetcn** 免费财经热榜（免 key）替代。
 
-### Security / Fixed
+### Fixed
 - 密钥卫生：`.gitignore` 新增忽略 `dmr_keys.env` / `mcp.json` / `*.env`；`scripts/setup_mcp.py` 写入 `mcp.json` 与 `dmr_keys.env` 后改为 `chmod 600`，并增加"输出落入 git 工作树则告警"守卫。
 - Bug 修复：`fred_query.py` 前缀正则对齐 `setup_mcp.py`（新增 `API\w*KEY` 分支）、`load_key()` env 路径剥前缀、observations URL 对 `series_id` 做 URL 编码；`source_health.py` 确认使用 `yaml.safe_load` 且无 eval/exec/shell。
 
 ### Removed
-- **sec-edinar-mcp 生成块移除**：上游 `stefanoamorelli/sec-edinar-mcp` 经 `git ls-remote` 实测 404 失效，生成的 server 无法安装；本机暂不需要 SEC EDGAR 维度，故整体移除 `scripts/setup_mcp.py` 中的常量声明、`sec-edgar-mcp` 生成块与桌面 `SECEDGAR_UA.txt` UA key 加载逻辑（共 26 行），全仓无残留引用。`dmr` 美股结构化申报维度继续由 `web_search` 兜底，不影响核心管线。
+- **sec-edgar-mcp 生成块移除**：上游 `stefanoamorelli/sec-edgar-mcp` 经 `git ls-remote` 实测 404 失效，生成的 server 无法安装；本机暂不需要 SEC EDGAR 维度，故整体移除 `scripts/setup_mcp.py` 中的常量声明、`sec-edgar-mcp` 生成块与桌面 `SECEDGAR_UA.txt` UA key 加载逻辑（共 26 行），全仓无残留引用。`dmr` 美股结构化申报维度继续由 `web_search` 兜底，不影响核心管线。
 
-> 注：本次为局部增强，未升版本号（仍为 v2.3.1）。

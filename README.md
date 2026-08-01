@@ -20,7 +20,7 @@
 
 
 
-## ✨ 特性（v2.3.1）
+## ✨ 特性（v2.3.2）
 
 
 
@@ -31,6 +31,8 @@
 ### 版本演进（最新在前）
 
 
+
+- **v2.3.2 维护补丁（P0 密钥卫生 + 健壮性修复 + 依赖清理）**：① 密钥卫生：`.gitignore` 忽略 `dmr_keys.env`/`mcp.json`/`*.env`，`setup_mcp.py` 写后 `chmod 600` + 仓库内告警守卫；② `fred_query.py` 前缀正则对齐 `setup_mcp.py`、`load_key()` env 剥前缀、observations URL 编码；③ 源健康监控原型 + 首个真实测试（8 测全过）；④ **移除失效的 SEC EDGAR MCP 生成块**（上游 404，美股结构化维度回退 `web_search`）。
 
 - **v2.3.1 MCP 修复 + 跨机器同步 + 可选源增补（维护性小版本）**：① 修复 MCP 鉴权 `APIKEY:` 前缀导致上游全 401 的 BUG（裸 token 后全 200）；② Tavily 改用官方 stdio 包免 OAuth；③ Zhihu 端点路径纠正 + `sse-only` 后三端点实测真通；④ 新增 `scripts/setup_mcp.py` 跨机器同步（零硬编码 key）；⑤ 新增可选源 FRED / Novada / Connected Papers / agent-reach（社媒增强层，已激活）与 `scripts/fred_query.py`；⑥ **midu-hotsearch 弃用**（不进 README 终态清单）；⑦ **新增 wallstreetcn 免费财经热榜**（免 key）替代蜜度热榜。
 
@@ -331,7 +333,6 @@ Skill 本身调用 Agent 内置联网工具（WebSearch / WebFetch）即可工�
 | **财经 / 热榜** | 腾讯自选股 / westock-mcp · **wallstreetcn**（免费财经热榜+快讯，免 key） | 上市公司基本面、行情、研报、实时热榜信号 | 🎯 平台专有 · 🟢 wallstreetcn | 🟢 wallstreetcn 免 key · 🟡 自选股/westock 需授权 |
 | **法律 / 合规** | 威科先行 / 元典 / **北大法宝（pkulaw）** | 诉讼、资质、行政处罚、法律法规检索 | 🎯 平台专有 | 🟡 需平台授权 |
 | **企业工商 / 风险** | 天眼查 MCP / 企查查 MCP / **启信慧眼（qixinhuiyan）** | 股权、司法、经营异常、知识产权、企业风险洞察 | 🎯 平台专有 | 🟡 需平台授权 |
-| **美股 / SEC** | SEC EDGAR MCP | 10-K/10-Q/财报附注/XBRL 科目级财报/内幕交易 Form 4 | 🎯 平台专有 | 🟡 需连 MCP（免 key，仅需 User-Agent 标识） |
 | **顶刊 / 中文文献** | Nature / Science（引 DOI）/ CNKI / Google Scholar（仅用户导出） | 顶刊一手（摘要公开，全文多需订阅）；访问伦理 | 🌐 通用联网 | 🟢 摘要免 key · 🟡 CNKI/订阅需授权 |
 | **宏观经济** | Trading Economics / FRED / 国家统计局 / 央行·证监会 / 财联社 / 华尔街见闻 | 宏观指标 + 超预期/不及预期判断 | 🌐 通用联网 | 🟡 FRED 需 `FRED_API_KEY`（免费申请，**强需**：无 key 直接 HTTP 400 `Variable api_key is not set`）· 🌐 其余通用联网 |
 | **专利（公开库）** | Google Patents / USPTO / EPO / WIPO | 专利原文、法律状态 | 🌐 通用联网 | 🟢 免 key |
@@ -363,7 +364,7 @@ Skill 本身调用 Agent 内置联网工具（WebSearch / WebFetch）即可工�
 
 - **端到端示例**：从「调研中国工业机器人赛道 + 减速器国产化 + 埃斯顿/汇川对位」用户提问，到 Step 0→8 逐环产出物（采集 / 去重 / 验证 / 矛盾消解 / 分级 / 模板 / 评分卡）—— 见 SKILL.md [第九节 · 完整示例](SKILL.md#九完整示例端到端从用户提问到报告)。
 
-- **完整更新史**：v2.0.0 → v2.3.1 每项变更细节 —— 见 SKILL.md [附录 A](SKILL.md#附录-a完整更新史v200--v231)。
+- **完整更新史**：v2.0.0 → v2.3.2 每项变更细节 —— 见 SKILL.md [附录 A](SKILL.md#附录-a完整更新史v200--v232)。
 
 
 

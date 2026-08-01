@@ -1,4 +1,4 @@
-# v2.3.1 — MCP 修复 + 跨机器同步 + 可选源增补
+# v2.3.2 — P0 密钥卫生 + 健壮性修复 + 依赖清理
 
 > **2026-07-23** · 维护性小版本（基于 v2.3.0 增量修复 + 可选源吸收）
 > 主管线（Step 0→8 + 三-B 深度研究闭环）零变动，仅 bug 修复 / 工具增强 / 可选源文档。
@@ -35,7 +35,6 @@
 | **douyinmcp** | 抖音**深度内容 + 热榜**（搜索/评论/用户/视频/get_homefeed 首页流，本地 a_bogus 签名） | 抖音深度检索 + 实时热榜信号，免费本地 MCP | ✅ 吸收为**抖音深度可选源**（优先免费，需 Chrome 登录 Cookie；`get_homefeed` 已 8/8 工具激活，替代 midu 的抖音维度） |
 | **wallstreetcn（华尔街见闻）** | **实时财经热榜/要闻/快讯**（A股/美股/港股/全球/外汇/黄金/原油/数字货币 5+ 频道） | 中文财经研究首选，替代 midu 的金融维度 | ✅ **吸收为财经热榜可选源**（免费、免 key，2026-07 实测 5 频道 + 4 端点全 HTTP 200） |
 | **TikHub API** | 微信+抖音**结构化 JSON**（阅读/点赞/评论，稳定契约） | 付费稳定备用，规模化检索 | 🥈 备选（付费，按请求计费） |
-| **SEC EDGAR MCP** | 美股**官方申报/财报结构化数据**（10-K/10-Q/8-K 全文、XBRL 财报、内线交易 Form 4/345、公司 Facts） | 免费官方权威，补 dmr **美股结构化申报/财报空白**（web_search 只抓网页、拿不到 XBRL 字段） | ✅ **吸收**（美股结构化可选源，免 key 仅需 User-Agent，归 🟡 需连 MCP） |
 
 ### 新增脚本
 - **`scripts/fred_query.py`**：轻量 FRED 查询工具（按系列 ID 查观测 / 按关键词搜索系列），自动读桌面 key（Rule 1 剥前缀）。
@@ -44,9 +43,9 @@
 
 ## 📊 已集成的检索源
 
-- **本地 MCP 连接器（脚本化管理）**：exa / firecrawl / tavily / huggingface / modelscope / zhihu（search · global · hotlist）/ readgzh（远程 MCP）/ sec-edgar-mcp（uvx，UA 注入）+ keyless deepwiki 远程 MCP
+- **本地 MCP 连接器（脚本化管理）**：exa / firecrawl / tavily / huggingface / modelscope / zhihu（search · global · hotlist）/ readgzh（远程 MCP）+ keyless deepwiki 远程 MCP
 - **默认层**：LLM 内置 web_search / web_fetch
-- **可选增强源（路由不打包 · 优雅降级）**：FRED（结构化经济数据）、agent-reach（社媒/UGC，实测 10/15 渠道）、Novada（兜底解锁层）、ReadGZH-Agent（公众号全文）、douyinmcp（抖音深度 + `get_homefeed` 热榜，免费优先）、wallstreetcn（财经实时热榜/快讯，免费无 key）、TikHub（微信+抖音结构化，付费备用）、**SEC EDGAR MCP**（美股官方申报/财报 XBRL/内幕交易 Form 4，免 key 仅需 User-Agent，补美股结构化空白）。**midu-hotsearch 已弃用**（新版蜜度 API 不兼容 + 付费门槛）
+- **可选增强源（路由不打包 · 优雅降级）**：FRED（结构化经济数据）、agent-reach（社媒/UGC，实测 10/15 渠道）、Novada（兜底解锁层）、ReadGZH-Agent（公众号全文）、douyinmcp（抖音深度 + `get_homefeed` 热榜，免费优先）、wallstreetcn（财经实时热榜/快讯，免费无 key）、TikHub（微信+抖音结构化，付费备用）、**midu-hotsearch 已弃用**（新版蜜度 API 不兼容 + 付费门槛）
 - **原则**：dmr 只做**路由编排 + 优雅降级**，不捆绑任何外部 peer skill / MCP；未连接或缺失 key 时自动回退 `web_search` 并注明「未覆盖该维度」，绝不阻断 Step 0→8 主管线。
 
 ---
@@ -58,7 +57,6 @@
 - **midu-hotsearch（抖音热搜）**：❌ **已弃用** — 新版 midu.com API 不兼容 + 付费门槛。替代：抖音热榜走 `douyinmcp.get_homefeed`，财经热榜走 wallstreetcn，其余 web_search+zhihu MCP 兜底。
 - **douyinmcp（抖音深度 + 热榜）**：需从已登录 Chrome 导出 `cookies.txt`；`get_homefeed` 工具可作抖音实时热榜信号（已 8/8 工具激活）。未配置则抖音检索回退 web_search。Chrome 登录态经 OpenCLI 浏览器桥已确认可达。
 - **wallstreetcn（财经热榜）**：🆕 免费无 key REST API（`https://api-one.wallstcn.com/apiv1/content/{articles,lives,hots,hot-rank}?channel=...&limit=...`），已实测 5 频道全 HTTP 200。
-- **SEC EDGAR MCP（美股官方申报/财报）**：🆕 免 API key，仅需 `SEC_EDGAR_USER_AGENT`（name+email，非密钥，SEC 强制）。经 `scripts/setup_mcp.py` 自动读取桌面 `SECEDGAR_UA.txt` 配入 mcp.json（uvx 运行 `stefanoamorelli/sec-edgar-mcp`）；未配置则美股结构化申报维度回退 `web_search`。
 
 ---
 

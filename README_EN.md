@@ -20,7 +20,7 @@ Follows the [Agent Skills open standard](https://agentskills.io/) (initiated by 
 
 
 
-## ✨ Features (v2.3.1)
+## ✨ Features (v2.3.2)
 
 
 
@@ -31,6 +31,8 @@ Follows the [Agent Skills open standard](https://agentskills.io/) (initiated by 
 ### Version evolution (newest first)
 
 
+
+- **v2.3.2 Maintenance patch (P0 key hygiene + robustness fixes + dependency cleanup)**: ① key hygiene: `.gitignore` ignores `dmr_keys.env`/`mcp.json`/`*.env`; `setup_mcp.py` chmod 600 after writing + in-repo warning guard; ② `fred_query.py` prefix regex aligned with `setup_mcp.py`, `load_key()` env strips prefix, observations URL encoded; ③ source-health monitoring prototype + first real tests (8 passing); ④ **removed broken SEC EDGAR MCP block** (upstream 404; US-structured filings fall back to `web_search`).
 
 - **v2.3.1 MCP fixes + cross-machine sync + optional sources (maintenance release)**: ① fixed MCP auth `APIKEY:` prefix bug that caused upstream 401 (bare token → all 200); ② Tavily switched to official stdio package (OAuth-free); ③ Zhihu endpoint path corrected + `sse-only` → three endpoints verified live; ④ added `scripts/setup_mcp.py` cross-machine sync (zero hardcoded keys); ⑤ added optional sources FRED / Novada / Connected Papers / agent-reach (social layer, activated) and `scripts/fred_query.py`.
 
@@ -331,7 +333,6 @@ The skill itself works using the agent's built-in web tools (WebSearch / WebFetc
 | **Finance / hot-list** | Tencent self-selected / westock-mcp · **wallstreetcn** (free finance hot-list + flash, key-free) | fundamentals, quotes, research, real-time hot-list signal | 🎯 Platform-specific · 🟢 wallstreetcn | 🟢 wallstreetcn key-free · 🟡 self-selected/westock needs auth |
 | **Legal / compliance** | Wolters Kluwer / YuanDian / **pkulaw** | litigation, penalties, laws | 🎯 Platform-specific | 🟡 Needs platform auth |
 | **Enterprise registry / risk** | Tianyancha / Qichacha / **qixinhuiyan** | equity, judiciary, risk | 🎯 Platform-specific | 🟡 Needs platform auth |
-| **US stocks / SEC** | SEC EDGAR MCP | 10-K/10-Q footnotes / XBRL financials / insider Form 4 | 🎯 Platform-specific | 🟡 Needs MCP connection (key-free, only User-Agent identifier) |
 | **Top journals / Chinese literature** | Nature / Science (DOI) / CNKI / Google Scholar (export) | first-hand top-journal | 🌐 General web | 🟢 Abstract key-free · 🟡 CNKI/subscription needs auth |
 | **Macroeconomics** | Trading Economics / FRED / NBS / PBOC·CSRC / Cailian / Wallstreetcn | macro indicators | 🌐 General web | 🟡 FRED needs `FRED_API_KEY` (free signup, **strict requirement**: no key → HTTP 400 `Variable api_key is not set`) · 🌐 Others via general web |
 | **Patents (public)** | Google Patents / USPTO / EPO / WIPO | patent text, legal status | 🌐 General web | 🟢 Key-free |
@@ -364,7 +365,7 @@ The skill itself works using the agent's built-in web tools (WebSearch / WebFetc
 
 - **End-to-end example**: from the user query "Research China's industrial-robot track + reducer localization + Estun/Inovance positioning" to the per-step outputs of Step 0→8 (collection / dedupe / validation / contradiction resolution / tiering / template / scorecard) — see SKILL.md [Section 9 · Full Example](SKILL.md).
 
-- **Full changelog**: every change detail from v2.0.0 → v2.3.1 — see SKILL.md [Appendix A](SKILL.md#附录-a完整更新史v200--v231)。
+- **Full changelog**: every change detail from v2.0.0 → v2.3.2 — see SKILL.md [Appendix A](SKILL.md#附录-a完整更新史v200--v232)。
 
 
 
