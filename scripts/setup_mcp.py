@@ -51,10 +51,6 @@ NON_MCP_KEYFILES = {
     "NOVADA_API_KEY": "novadaWeb UnblockerAPIkey.txt",
 }
 
-# SEC EDGAR 用户代理标识（name+email，非密钥，SEC 强制要求用于礼貌访问）
-# 仅用于生成 sec-edgar-mcp 的 SEC_EDGAR_USER_AGENT 环境变量，绝不写 dmr_keys.env
-SEC_EDGAR_UA_FILE = "SECEDGAR_UA.txt"
-
 # 前缀正则：匹配 APIKEY: / APIkey：/ access token：/ Key£º / Token: 等
 # 分隔符 [:：£º] 设为可选 —— 应对 GBK 全角冒号在 UTF-8 读取时被静默丢弃的情况
 PREFIX_RE = re.compile(
@@ -230,20 +226,6 @@ def build_servers(keys: dict) -> dict:
             "headers": {"Authorization": f"Bearer {keys['readgzh']}"},
         }
 
-    if "sec_edgar_ua" in keys:
-        # SEC EDGAR：美国 SEC 官方 filings（10-K/10-Q/8-K/内幕交易 XBRL 财报）
-        # 免 API key，仅需 SEC 强制要求的 User-Agent（name+email，非密钥）
-        # uvx 拉取官方 sec-edgar-mcp 包运行（与 huggingface/modelscope 一致）
-        servers["sec-edgar-mcp"] = {
-            "command": "uvx",
-            # TODO(broken): 上游仓库 stefanoamorelli/sec-edgar-mcp 于 2026-07-23 经 git ls-remote 验证返回
-            #   "Repository not found"，当前 URL 已失效，生成的 sec-edgar-mcp server 无法安装运行。
-            #   须先确认有效上游（PyPI 包名或新仓库）并固定版本/commit，或在本机暂不需要 SEC EDGAR 时
-            #   移除本块后再投入使用。
-            "args": ["--from", "git+https://github.com/stefanoamorelli/sec-edgar-mcp.git", "sec-edgar-mcp"],
-            "env": {"SEC_EDGAR_USER_AGENT": keys["sec_edgar_ua"]},
-        }
-
     # DeepWiki: keyless 远程 MCP（免 key 免 headers 免 env），GitHub 仓库文档问答
     # 一键连接（WorkBuddy MCP 管理页点 Trust 激活），代码/项目研究层补全
     servers["deepwiki"] = {
@@ -286,14 +268,6 @@ def main():
 
     if missing:
         print(f"[!] 未找到/未提取: {', '.join(m[0] for m in missing)}")
-
-    # SEC EDGAR User-Agent（非密钥，但同样从桌面文件读取；SEC 强制要求）
-    ua_path = os.path.join(desktop, SEC_EDGAR_UA_FILE)
-    if os.path.isfile(ua_path):
-        ua = read_text(ua_path).strip()
-        if ua:
-            keys["sec_edgar_ua"] = ua
-            print(f"  [✓] {'sec_edgar_ua':<12} ← {SEC_EDGAR_UA_FILE} ({len(ua)} chars)")
 
     if not keys:
         print("[!] 无任何 key / UA 可配置，退出", file=sys.stderr)
