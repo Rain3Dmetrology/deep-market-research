@@ -32,12 +32,12 @@ import sys
 import urllib.parse
 import urllib.request
 
-PREFIX_RE = re.compile(r"^(?:APIKEY|APIkey|access\s*token|Key|Token)\s*[:：£º]?\s*", re.I)
+PREFIX_RE = re.compile(r"^(?:APIKEY|APIkey|API\w*KEY|access\s*token|Key|Token)\s*[:：£º]?\s*", re.IGNORECASE)
 
 
 def load_key() -> str | None:
     if os.environ.get("FRED_API_KEY"):
-        return os.environ["FRED_API_KEY"].strip()
+        return PREFIX_RE.sub("", os.environ["FRED_API_KEY"]).strip()
     for base in (
         os.path.expandvars(r"%OneDrive%\Desktop"),
         os.path.expanduser("~/OneDrive/Desktop"),
@@ -104,7 +104,7 @@ def main():
         for s in rows:
             print(f"{s['id']}\t{s.get('title', '')}\t[{s.get('frequency', '')}]")
     else:
-        url = (f"{base}/series/observations?series_id={args.series}&api_key={key}"
+        url = (f"{base}/series/observations?series_id={urllib.parse.quote(args.series, safe='')}&api_key={key}"
                f"&file_type=json&limit={args.limit}&sort_order=desc")
         if args.start:
             url += f"&observation_start={args.start}"

@@ -32,7 +32,7 @@
 
 
 
-- **v2.3.1 MCP 修复 + 跨机器同步 + 可选源增补（维护性小版本）**：① 修复 MCP 鉴权 `APIKEY:` 前缀导致上游全 401 的 BUG（裸 token 后全 200）；② Tavily 改用官方 stdio 包免 OAuth；③ Zhihu 端点路径纠正 + `sse-only` 后三端点实测真通；④ 新增 `scripts/setup_mcp.py` 跨机器同步（零硬编码 key）；⑤ 新增可选源 FRED / Novada / Connected Papers / agent-reach（社媒增强层，已激活）与 `scripts/fred_query.py`；⑥ **midu-hotsearch 弃用**（新版 midu.com 改 OAuth + 付费墙，原 `MIDU_APP_SECRET` 失效，错误码 202005/203003，不进 README 终态清单）；⑦ **新增 wallstreetcn 免费财经热榜**（免 key）替代蜜度热榜。
+- **v2.3.1 MCP 修复 + 跨机器同步 + 可选源增补（维护性小版本）**：① 修复 MCP 鉴权 `APIKEY:` 前缀导致上游全 401 的 BUG（裸 token 后全 200）；② Tavily 改用官方 stdio 包免 OAuth；③ Zhihu 端点路径纠正 + `sse-only` 后三端点实测真通；④ 新增 `scripts/setup_mcp.py` 跨机器同步（零硬编码 key）；⑤ 新增可选源 FRED / Novada / Connected Papers / agent-reach（社媒增强层，已激活）与 `scripts/fred_query.py`；⑥ **midu-hotsearch 弃用**（不进 README 终态清单）；⑦ **新增 wallstreetcn 免费财经热榜**（免 key）替代蜜度热榜。
 
 - **v2.3.0 平台无关 + 深度研究闭环（去粗取精、泛化优先）**：① 默认零依赖零安装，不绑定任何平台 MCP / agent-team 协议 / 专有后端；② 新增「三-B 深度研究闭环（平台无关，纯提示词编排）」，吸收多平台深度研究 agent 团队精华；③ 竞品关键参数交叉验证由 ≥2 升 ≥3；④ 质量规则增补「可选工具非质量前提 / 不绑死平台」；⑤ 新增 `references/cross-platform-tools.md` 六平台可选工具接入指南。
 

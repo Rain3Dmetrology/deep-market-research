@@ -26,6 +26,7 @@ import re
 import sys
 import shutil
 import argparse
+import subprocess
 from datetime import datetime
 
 # ---------------------------------------------------------------------------
@@ -93,6 +94,28 @@ def read_text(path: str) -> str:
         except UnicodeDecodeError:
             continue
     return raw.decode("utf-8", errors="ignore")
+
+
+def _warn_if_in_repo(path: str) -> None:
+    """若 path 位于 git 工作树内，向 stderr 打印 WARNING（含密钥，切勿提交）。
+
+    通过 `git -C <父目录> rev-parse --is-inside-work-tree` 判定；
+    shell=False（强制）以避免命令注入。判定失败（git 不存在等）时静默跳过。
+    """
+    parent = os.path.dirname(os.path.abspath(path)) or "."
+    try:
+        res = subprocess.run(
+            ["git", "-C", parent, "rev-parse", "--is-inside-work-tree"],
+            capture_output=True, text=True, shell=False,
+        )
+    except (OSError, ValueError):
+        return
+    if res.stdout.strip() == "true":
+        print(
+            f"[!] WARN: 输出文件 {path} 位于 git 工作树内，"
+            f"请确保它已被 .gitignore 忽略（含密钥，切勿提交）",
+            file=sys.stderr,
+        )
 
 
 def extract_key(path: str, keep_prefix: bool) -> str | None:
@@ -213,6 +236,10 @@ def build_servers(keys: dict) -> dict:
         # uvx 拉取官方 sec-edgar-mcp 包运行（与 huggingface/modelscope 一致）
         servers["sec-edgar-mcp"] = {
             "command": "uvx",
+            # TODO(broken): 上游仓库 stefanoamorelli/sec-edgar-mcp 于 2026-07-23 经 git ls-remote 验证返回
+            #   "Repository not found"，当前 URL 已失效，生成的 sec-edgar-mcp server 无法安装运行。
+            #   须先确认有效上游（PyPI 包名或新仓库）并固定版本/commit，或在本机暂不需要 SEC EDGAR 时
+            #   移除本块后再投入使用。
             "args": ["--from", "git+https://github.com/stefanoamorelli/sec-edgar-mcp.git", "sec-edgar-mcp"],
             "env": {"SEC_EDGAR_USER_AGENT": keys["sec_edgar_ua"]},
         }
@@ -313,9 +340,13 @@ def main():
         shutil.copy2(args.out, bak)
         print(f"[i] 已备份: {bak}")
 
-    os.makedirs(os.path.dirname(args.out), exist_ok=True)
+    out_dir = os.path.dirname(args.out)
+    if out_dir:
+        os.makedirs(out_dir, exist_ok=True)
     with open(args.out, "w", encoding="utf-8") as f:
         json.dump(out_obj, f, indent=2, ensure_ascii=False)
+    os.chmod(args.out, 0o600)
+    _warn_if_in_repo(args.out)
     print(f"\n[✓] 已生成 {args.out}")
     print(f"    共 {len(merged)} 个 server（本次管理 {len(new_servers)}，保留 {len(preserved)}）")
 
@@ -334,6 +365,8 @@ def main():
         with open(env_path, "w", encoding="utf-8") as f:
             for k, v in non_mcp.items():
                 f.write(f"{k}={v}\n")
+        os.chmod(env_path, 0o600)
+        _warn_if_in_repo(env_path)
         print(f"[i] 已生成 {env_path}（本机专用，勿提交仓库）")
 
     print("\n下一步：WorkBuddy → MCP 服务管理 → 对每个新 server 点 Trust 激活")

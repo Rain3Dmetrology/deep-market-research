@@ -1,6 +1,11 @@
 # API credentials - NEVER commit
 config/api_config.json
 
+# Secrets / local key material — NEVER commit
+dmr_keys.env
+mcp.json
+*.env
+
 # Python
 __pycache__/
 .pytest_cache/
