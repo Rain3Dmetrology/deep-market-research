@@ -20,7 +20,7 @@ Follows the [Agent Skills open standard](https://agentskills.io/) (initiated by 
 
 
 
-## ✨ Features (v2.3.2)
+## ✨ Features (v2.3.4)
 
 
 
@@ -28,26 +28,9 @@ Follows the [Agent Skills open standard](https://agentskills.io/) (initiated by 
 
 
 
-### Version evolution (newest first)
+### Version evolution
 
-
-
-- **v2.3.2 Maintenance patch (P0 key hygiene + robustness fixes + dependency cleanup)**: ① key hygiene: `.gitignore` ignores `dmr_keys.env`/`mcp.json`/`*.env`; `setup_mcp.py` chmod 600 after writing + in-repo warning guard; ② `fred_query.py` prefix regex aligned with `setup_mcp.py`, `load_key()` env strips prefix, observations URL encoded; ③ source-health monitoring prototype + first real tests (8 passing); ④ **removed broken SEC EDGAR MCP block** (upstream 404; US-structured filings fall back to `web_search`).
-
-- **v2.3.1 MCP fixes + cross-machine sync + optional sources (maintenance release)**: ① fixed MCP auth `APIKEY:` prefix bug that caused upstream 401 (bare token → all 200); ② Tavily switched to official stdio package (OAuth-free); ③ Zhihu endpoint path corrected + `sse-only` → three endpoints verified live; ④ added `scripts/setup_mcp.py` cross-machine sync (zero hardcoded keys); ⑤ added optional sources FRED / Novada / Connected Papers / agent-reach (social layer, activated) and `scripts/fred_query.py`.
-
-- **v2.3.0 Platform-agnostic + deep-research loop (de-cluttered, generalization-first)**: ① zero-dependency, zero-install by default - no assumption of any platform MCP / agent-team protocol / proprietary backend; ② new **Three-B deep-research loop (platform-agnostic, pure-prompt orchestration)** absorbing the essence of multi-platform deep-research agent teams; ③ competitive-key-param cross-validation raised from >=2 to >=3 sources; ④ quality rules added - optional tools are not a quality prerequisite / no platform lock-in; ⑤ new `references/cross-platform-tools.md` guide for six platforms.
-
-- **v2.2.10 Optional search backend appendix reinforcement**: AnySearch / Metaso registered as optional CN enhancements; key-free graceful degradation; main pipeline untouched.
-
-- **v2.2.7 P1 integration + de-cluttering**: structured asset accumulation + optional deep backend + Step 1 intent routing + native CJK.
-
-- **v2.2.6 Adversarial audit discipline**: corpus critic + 4 parallel critics + patch-never-regenerate + source tree + lint checklist.
-
-- **v2.2.5 Search methodology sharpening**: information-density first, cross-source diversity weighting, three-axis hybrid ranking.
-
-- **v2.2.4 Normative enhancements**: FAQ, end-to-end example, full changelog appendix. → [SKILL.md Section 8 / FAQ](SKILL.md)
-
+- Full changelog: see [CHANGELOG.md](CHANGELOG.md).
 
 
 ### Unique advantages
@@ -365,7 +348,7 @@ The skill itself works using the agent's built-in web tools (WebSearch / WebFetc
 
 - **End-to-end example**: from the user query "Research China's industrial-robot track + reducer localization + Estun/Inovance positioning" to the per-step outputs of Step 0→8 (collection / dedupe / validation / contradiction resolution / tiering / template / scorecard) — see SKILL.md [Section 9 · Full Example](SKILL.md).
 
-- **Full changelog**: every change detail from v2.0.0 → v2.3.2 — see SKILL.md [Appendix A](SKILL.md#附录-a完整更新史v200--v232)。
+- **Full changelog**: every change detail from v2.0.0 → v2.3.4 — see [CHANGELOG.md](CHANGELOG.md).
 
 
 

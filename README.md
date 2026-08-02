@@ -20,7 +20,7 @@
 
 
 
-## ✨ 特性（v2.3.2）
+## ✨ 特性（v2.3.4）
 
 
 
@@ -28,26 +28,9 @@
 
 
 
-### 版本演进（最新在前）
+### 版本演进
 
-
-
-- **v2.3.2 维护补丁（P0 密钥卫生 + 健壮性修复 + 依赖清理）**：① 密钥卫生：`.gitignore` 忽略 `dmr_keys.env`/`mcp.json`/`*.env`，`setup_mcp.py` 写后 `chmod 600` + 仓库内告警守卫；② `fred_query.py` 前缀正则对齐 `setup_mcp.py`、`load_key()` env 剥前缀、observations URL 编码；③ 源健康监控原型 + 首个真实测试（8 测全过）；④ **移除失效的 SEC EDGAR MCP 生成块**（上游 404，美股结构化维度回退 `web_search`）。
-
-- **v2.3.1 MCP 修复 + 跨机器同步 + 可选源增补（维护性小版本）**：① 修复 MCP 鉴权 `APIKEY:` 前缀导致上游全 401 的 BUG（裸 token 后全 200）；② Tavily 改用官方 stdio 包免 OAuth；③ Zhihu 端点路径纠正 + `sse-only` 后三端点实测真通；④ 新增 `scripts/setup_mcp.py` 跨机器同步（零硬编码 key）；⑤ 新增可选源 FRED / Novada / Connected Papers / agent-reach（社媒增强层，已激活）与 `scripts/fred_query.py`；⑥ **midu-hotsearch 弃用**（不进 README 终态清单）；⑦ **新增 wallstreetcn 免费财经热榜**（免 key）替代蜜度热榜。
-
-- **v2.3.0 平台无关 + 深度研究闭环（去粗取精、泛化优先）**：① 默认零依赖零安装，不绑定任何平台 MCP / agent-team 协议 / 专有后端；② 新增「三-B 深度研究闭环（平台无关，纯提示词编排）」，吸收多平台深度研究 agent 团队精华；③ 竞品关键参数交叉验证由 ≥2 升 ≥3；④ 质量规则增补「可选工具非质量前提 / 不绑死平台」；⑤ 新增 `references/cross-platform-tools.md` 六平台可选工具接入指南。
-
-- **v2.2.10 可选搜索后端附录补强**：AnySearch / 秘塔搜索登记为 CN 可选增强，无 key 优雅降级，不动主管线。
-
-- **v2.2.7 P1 集成 + 去粗取精**：结构化沉淀 + 可选深度后端 + Step 1 意图路由 + CJK 原生。
-
-- **v2.2.6 对抗式审计纪律**：corpus critic + 4 类并行 critic + patch-never-regenerate + 来源树 + lint 清单。
-
-- **v2.2.5 搜索方法论 sharpening**：信息密度优先、同源多样性权重、三轴混合排序。
-
-- **v2.2.4 规范性增强**：FAQ、端到端示例、完整更新史附录。→ [SKILL.md 第八/九节](SKILL.md#八常见问题faq)
-
+- 完整版本变更明细见 [CHANGELOG.md](CHANGELOG.md)。
 
 
 ### 独有优势
@@ -364,7 +347,7 @@ Skill 本身调用 Agent 内置联网工具（WebSearch / WebFetch）即可工�
 
 - **端到端示例**：从「调研中国工业机器人赛道 + 减速器国产化 + 埃斯顿/汇川对位」用户提问，到 Step 0→8 逐环产出物（采集 / 去重 / 验证 / 矛盾消解 / 分级 / 模板 / 评分卡）—— 见 SKILL.md [第九节 · 完整示例](SKILL.md#九完整示例端到端从用户提问到报告)。
 
-- **完整更新史**：v2.0.0 → v2.3.2 每项变更细节 —— 见 SKILL.md [附录 A](SKILL.md#附录-a完整更新史v200--v232)。
+- **完整更新史**：v2.0.0 → v2.3.4 每项变更细节 —— 见 [CHANGELOG.md](CHANGELOG.md)。
 
 
 

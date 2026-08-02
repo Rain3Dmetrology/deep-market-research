@@ -49,3 +49,10 @@ Thumbs.db
 # Reports (generated outputs)
 research_report_*.md
 *.log
+
+# Additional security patterns (per release audit)
+*.key
+credentials*
+*secret*
+local_*_paths*
+*.local.*
