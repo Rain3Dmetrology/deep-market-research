@@ -1,4 +1,4 @@
-# Changelog
+﻿# Changelog
 
 ## [2.3.4] - 2026-08-03
 
@@ -15,6 +15,10 @@
 ### Changed
 - SKILL.md 版本号 v2.3.3 -> v2.3.4，行数 355 -> 380（<=500 目标内）
 - 参考文档索引中 CHANGELOG 描述更新为 v2.0.0 -> v2.3.4
+- README.md / README_EN.md 精简：363/364 行 -> 134/134 行（<=200 目标），数据源表移至 references/data-sources.md
+
+### Added
+- references/data-sources.md：完整可选数据源表（30+ 维度）从 README 迁入
 
 ---
 
