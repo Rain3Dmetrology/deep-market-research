@@ -10,7 +10,7 @@ Follows the [Agent Skills open standard](https://agentskills.io/) (initiated by 
 
 ---
 
-## ✨ Features (v2.3.4)
+## ✨ Features (v2.4.0)
 
 > Core difference vs generic AI search / deep-research skills: **dmr is not a search wrapper — it is a reproducible, confidence-labeled research pipeline with adversarial final-draft auditing.**
 
@@ -125,7 +125,7 @@ The skill itself works using the agent's built-in web tools (WebSearch / WebFetc
 
 - **FAQ (7 questions)**: see SKILL.md [Section 8 · FAQ](SKILL.md)
 - **End-to-end example**: see SKILL.md [Section 9 · Full Example](SKILL.md)
-- **Full changelog**: v2.0.0 → v2.3.4 — see [CHANGELOG.md](CHANGELOG.md)
+- **Full changelog**: v2.0.0 → v2.4.0 — see [CHANGELOG.md](CHANGELOG.md)
 
 ---
 

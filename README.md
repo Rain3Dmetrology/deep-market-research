@@ -10,7 +10,7 @@
 
 ---
 
-## ✨ 特性（v2.3.4）
+## ✨ 特性（v2.4.0）
 
 > 与通用 AI 搜索 / 深度研究 skill 的核心差异：**dmr 不是搜索包装，而是一条可复现、带置信标签、终稿对抗审计的调研流水线。**
 
@@ -125,7 +125,7 @@ Skill 本身调用 Agent 内置联网工具（WebSearch / WebFetch）即可工�
 
 - **FAQ（7 问）**：见 SKILL.md [第八节 · FAQ](SKILL.md#八常见问题faq)
 - **端到端示例**：见 SKILL.md [第九节 · 完整示例](SKILL.md#九完整示例端到端从用户提问到报告)
-- **完整更新史**：v2.0.0 → v2.3.4 — 见 [CHANGELOG.md](CHANGELOG.md)
+- **完整更新史**：v2.0.0 → v2.4.0 — 见 [CHANGELOG.md](CHANGELOG.md)
 
 ---
 
