@@ -2,13 +2,14 @@
 name: deep-market-research
 slug: deep-market-research
 displayName: Deep Market Research
-version: "2.3.4"
+version: "2.4.0"
 summary: 深度市场 / 竞品 / 技术趋势调研工作流，输出稳定、可复现、带引用溯源的研究报告。
 description: |
   深度市场 / 竞品 / 技术趋势调研工作流，输出稳定、可复现、带引用溯源的研究报告。
-  v2.3.4 核心能力：确定性 Step 0->8 流水线 + NATO 式 4 级源分级 + >=2 源交叉验证 +
-  主动去重/去陈旧/去伪造/去矛盾 + 平台无关（默认零依赖，可选 MCP/API 后端优雅降级）。
-  适用：市场调研、竞品分析、行业格局、技术趋势、竞品对位、尽调、产业链研究、投资机会发现。
+  v2.4.0 核心能力：确定性 Step 0->8 流水线 + NATO 式 4 级源分级 + >=2 源交叉验证 +
+  主动去重/去陈旧/去伪造/去矛盾 + 平台无关（默认零依赖，可选 MCP/API 后端优雅降级）+
+  监测增量模板 E + 强制实体级证据缓存。
+  适用：市场调研、竞品分析、行业格局、技术趋势、竞品对位、尽调、产业链研究、投资机会发现、周期监测。
 license: MIT
 compatibility: >
   Platform-agnostic: runs on ANY agent that loads skills / system prompts.
@@ -19,14 +20,14 @@ compatibility: >
   v2.2.1 已永久删除 6 个冗余 absorbed skill（不可逆）；方法论已并入本流程。
   HONESTY RULE: only list skills/connectors actually available in the environment.
 metadata:
-  version: "2.3.4"
+  version: "2.4.0"
   author: "Rain / WorkBuddy"
   adapted_from: "sota-research + RSSnewsnowTrendRadar + 行业趋势深度调研 + 公司竞品深度调研 + market-researcher + material-organizer + llm-wiki + NATO Admiralty + Cat-Research。详见 references/optional-modules.md。"
 ---
 
 # Deep Market Research Workflow -- 深度市场调研工作流
 
-> 版本: 2.3.4 | 许可证: MIT
+> 版本: 2.4.0 | 许可证: MIT
 > 设计目标：**输出质量稳定、可复现、去重去旧去假去矛盾、并吸收真实用户热评**。
 
 ---
@@ -281,6 +282,7 @@ metadata:
 > - 行业/赛道/产业链/趋势预测/投资机会 -> 模板 B（五大板块），强制利润穿透、反方观点、1-2年趋势、每板块>=1非散文元素
 > - 公司/竞品/尽调/对位分析 -> 模板 C（四维框架），强制四维分析、7字段证据、SWOT、情景推演、真实负面多渠道验证
 > - 论文/SOTA/学术/基准/技术选型/文献综述 -> 模板 D（学术模式），启用学术数据源模块与严格引文格式
+> - 周报/月报/持续监测/增量更新（存在上期快照） -> 模板 E（监测增量版），强制对账基准+变化项明细+置信迁移，禁止全量重写
 >
 > **完整模板内容见 references/templates.md。** 模板可叠加（如 B + C 用于"行业赛道 + 竞品对位"复合查询）。
 
@@ -360,8 +362,10 @@ metadata:
 - 用户说"调研/分析/竞品/格局/趋势/深度调研/公司尽调/扒一下/挖一下/对位/对标"等即触发本流程。
 - **行业赛道模式**：查询含"行业趋势/赛道/产业链/投资机会/商业化落地/市场规模"-> 模板 B，强制利润穿透、>=1反方观点、1-2年趋势窗口、每板块1非散文元素。
 - **公司/竞品模式**：查询含"公司/竞品/尽调/扒一下/挖一下/对位/对标"-> 模板 C，强制四维分析、7字段证据、真实负面多渠道验证、SWOT、五类情景推演。
+- **监测增量模式（v2.4.0）**：查询含"周报/月报/持续监测/盯/增量更新"且**存在上期快照或历史沉淀 note** -> 模板 E（监测增量版）：以上期为对账基准只报变化项（新增/更新/降级/移除）+ 新证据 + 置信迁移 + 开放问题演进，**禁止全量重写**；无上期快照时不适用，先走 A-D 全量建基线。产出后照常执行终稿纪律与知识沉淀（note 增量更新）。
 - 默认跑完整 Step 0-8；若用户要"快版"，至少保留 Step1 + Step4 + Step8，但必须注明"快版，未全覆盖质量环"。
-- **增量知识沉淀（Karpathy 模式）**：每次完成后，把「评分卡 + 开放问题 + 核心证据」沉淀为**结构化 markdown note**（带 YAML frontmatter），落点三选一或并存：**ima 知识库（首选）/ Obsidian（PARA 结构）/ 本地 wiki**，采用三层结构（raw 源页 / wiki 合成页 / schema）。重跑同主题时先读历史 wiki 页，执行 **Lint 操作**扫描矛盾/过时/孤儿页。
+- **增量知识沉淀（Karpathy 模式 · 强制实体级证据缓存）**：每次完成后，把「评分卡 + 开放问题 + 核心证据」沉淀为**结构化 markdown note**（带 YAML frontmatter），落点三选一或并存：**ima 知识库（首选）/ Obsidian（PARA 结构）/ 本地 wiki**，采用三层结构（raw 源页 / wiki 合成页 / schema）。note 内必含**实体级证据缓存表**（实体 | 字段 | 值 | 源URL | 层级 | 日期 | 置信），作为下次同主题调研的**强制预读输入**：重跑同主题时**必须先读历史 note**（消费缓存证据、避免重复拉取），执行 **Lint 操作**扫描矛盾/过时/孤儿页；跳过预读直接全网重采视为违反预算纪律（重复拉取）。
+- **季度基准自测（v2.4.0）**：每季度或大版本变更时，跑一次 `benchmarks/industrial-vision-baseline.md` 的 5 题固定基准（工业视觉域），按 100 分制评分卡记录分数演化，防止质量回归不可见。
 
 ---
 
@@ -369,11 +373,12 @@ metadata:
 
 | 文件 | 内容 |
 |------|------|
-| `references/templates.md` | 4 套输出模板（A 通用 / B 行业赛道 / C 公司竞品 / D 学术） |
+| `references/templates.md` | 5 套输出模板（A 通用 / B 行业赛道 / C 公司竞品 / D 学术 / E 监测增量） |
 | `references/optional-modules.md` | 可选模块（学术数据源 / intel-brief / 宏观监测 / 公众号 / Perplexity）+ 分析透镜库 + skill 方法论吸收表 |
 | `references/cross-platform-tools.md` | 六平台可选工具接入指南（WorkBuddy / Claude / Codex / Trae / qoder / Cursor） |
 | `references/faq.md` | 常见问题（8 问） |
 | `references/example.md` | 端到端完整示例（工业机器人赛道调研） |
-| `CHANGELOG.md` | 完整更新史（v2.0.0 -> v2.3.4） |
+| `CHANGELOG.md` | 完整更新史（v2.0.0 -> v2.4.0） |
+| `benchmarks/industrial-vision-baseline.md` | 5 题固定基准集（工业视觉域）+ 季度分数演化记录 |
 | `sources.registry.yaml` | 信源注册表（default / optional / deprecated 三层） |
 | `scripts/source_health.py` | 信源健康监控 + 静态 PR 一致性门禁 |
