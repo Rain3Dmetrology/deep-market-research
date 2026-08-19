@@ -15,6 +15,9 @@
 ### Changed (CI)
 - workflows 升级 actions/checkout@v5 + actions/setup-python@v6（消除 Node 20 弃用警告）。
 
+### Fixed
+- install.ps1 仓库文件此前为 base64 文本而非可执行源码——重写为 PowerShell 源码；安装清单补 `benchmarks/`（否则 D4 基准集不会被安装）；安装目标补 `.trae-cn\skills`（TRAE 中文版平台）；安装时打印源版本号便于核验。
+
 ## [2.3.4] - 2026-08-03
 
 ### Added

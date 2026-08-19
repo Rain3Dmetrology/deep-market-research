@@ -1,1 +1,40 @@
-IyBEZWVwIE1hcmtldCBSZXNlYXJjaCBTa2lsbCAtIFdpbmRvd3Mgb25lLWNsaWNrIGluc3RhbGxlcgojIERldGVjdHMgaW5zdGFsbGVkIGFnZW50IHBsYXRmb3JtcyBhbmQgY29waWVzIHRoZSBza2lsbCBpbnRvIHRoZWlyIHNraWxscy8gZGlyZWN0b3J5LgoKJFNraWxsRGlyID0gImRlZXAtbWFya2V0LXJlc2VhcmNoIgokU3JjID0gU3BsaXQtUGF0aCAtUGFyZW50ICRNeUludm9jYXRpb24uTXlDb21tYW5kLlBhdGgKJEZpbGVzID0gQCgiU0tJTEwubWQiLCAiUkVBRE1FLm1kIiwgIlJFQURNRV9FTi5tZCIsICJyZWZlcmVuY2VzIiwgImFzc2V0cyIsICJMSUNFTlNFIiwgIkNPTlRSSUJVVElORy5tZCIsICIuZ2l0aWdub3JlIikKCiRUYXJnZXRzID0gQCgKICAiJGVudjpVU0VSUFJPRklMRVwuY2xhdWRlXHNraWxscyIsCiAgIiRlbnY6VVNFUlBST0ZJTEVcLmNvZGV4XHNraWxscyIsCiAgIiRlbnY6VVNFUlBST0ZJTEVcLnRyYWVcc2tpbGxzIiwKICAiJGVudjpVU0VSUFJPRklMRVwucW9kZXJcc2tpbGxzIiwKICAiJGVudjpVU0VSUFJPRklMRVwud29ya2J1ZGR5XHNraWxscyIKKQoKJGluc3RhbGxlZCA9IDAKZm9yZWFjaCAoJGJhc2UgaW4gJFRhcmdldHMpIHsKICBpZiAoVGVzdC1QYXRoICRiYXNlKSB7CiAgICAkZGVzdCA9IEpvaW4tUGF0aCAkYmFzZSAkU2tpbGxEaXIKICAgIE5ldy1JdGVtIC1JdGVtVHlwZSBEaXJlY3RvcnkgLUZvcmNlIC1QYXRoICRkZXN0IHwgT3V0LU51bGwKICAgIGZvcmVhY2ggKCRmIGluICRGaWxlcykgewogICAgICAkc3JjUGF0aCA9IEpvaW4tUGF0aCAkU3JjICRmCiAgICAgIGlmIChUZXN0LVBhdGggJHNyY1BhdGgpIHsKICAgICAgICBDb3B5LUl0ZW0gLVJlY3Vyc2UgLUZvcmNlICRzcmNQYXRoICRkZXN0CiAgICAgIH0KICAgIH0KICAgIFdyaXRlLUhvc3QgIkluc3RhbGxlZCB0byAkZGVzdCIKICAgICRpbnN0YWxsZWQrKwogIH0KfQoKaWYgKCRpbnN0YWxsZWQgLWVxIDApIHsKICBXcml0ZS1Ib3N0ICJObyBzdXBwb3J0ZWQgYWdlbnQgc2tpbGxzIGRpcmVjdG9yeSBmb3VuZC4gTWFudWFsbHkgY29weSB0aGlzIGZvbGRlciB0byB5b3VyIGFnZW50J3Mgc2tpbGxzIGRpcmVjdG9yeS4iCiAgZXhpdCAxCn0KV3JpdGUtSG9zdCAiRG9uZS4gUmVzdGFydCB5b3VyIGFnZW50IHRvIGxvYWQgJ2RlZXAtbWFya2V0LXJlc2VhcmNoJy4iCg==
+# Deep Market Research Skill - Windows one-click installer
+# Detects installed agent platforms and copies the skill into their skills/ directory.
+
+$SkillDir = "deep-market-research"
+$Src = Split-Path -Parent $MyInvocation.MyCommand.Path
+$Files = @("SKILL.md", "README.md", "README_EN.md", "references", "assets", "benchmarks", "LICENSE", "CONTRIBUTING.md", ".gitignore")
+
+$Targets = @(
+  "$env:USERPROFILE\.claude\skills",
+  "$env:USERPROFILE\.codex\skills",
+  "$env:USERPROFILE\.trae\skills",
+  "$env:USERPROFILE\.trae-cn\skills",
+  "$env:USERPROFILE\.qoder\skills",
+  "$env:USERPROFILE\.workbuddy\skills"
+)
+
+$SkillVersion = (Select-String -Path (Join-Path $Src "SKILL.md") -Pattern '^version:\s*"?([\d.]+)"?' | Select-Object -First 1).Matches.Groups[1].Value
+Write-Host "Installing deep-market-research v$SkillVersion"
+
+$installed = 0
+foreach ($base in $Targets) {
+  if (Test-Path $base) {
+    $dest = Join-Path $base $SkillDir
+    New-Item -ItemType Directory -Force -Path $dest | Out-Null
+    foreach ($f in $Files) {
+      $srcPath = Join-Path $Src $f
+      if (Test-Path $srcPath) {
+        Copy-Item -Recurse -Force $srcPath $dest
+      }
+    }
+    Write-Host "Installed to $dest"
+    $installed++
+  }
+}
+
+if ($installed -eq 0) {
+  Write-Host "No supported agent skills directory found. Manually copy this folder to your agent's skills directory."
+  exit 1
+}
+Write-Host "Done. Restart your agent to load 'deep-market-research'."
