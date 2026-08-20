@@ -50,6 +50,9 @@ Thumbs.db
 research_report_*.md
 *.log
 
+# Release drafting artifacts (scratch, not tracked)
+release_body.md
+
 # Additional security patterns (per release audit)
 *.key
 credentials*
