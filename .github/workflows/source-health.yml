@@ -41,8 +41,6 @@ jobs:
           ZHIHU_TOKEN: ${{ secrets.ZHIHU_TOKEN }}
           PATSNAP_TOKEN: ${{ secrets.PATSNAP_TOKEN }}
           CONNECTED_PAPERS_TOKEN: ${{ secrets.CONNECTED_PAPERS_TOKEN }}
-          MIDU_APP_SECRET: ${{ secrets.MIDU_APP_SECRET }}
-          WECHAT_MP_TOKEN: ${{ secrets.WECHAT_MP_TOKEN }}
 
       - name: Upload parity report
         if: always()
