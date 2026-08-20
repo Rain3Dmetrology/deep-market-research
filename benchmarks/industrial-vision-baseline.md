@@ -70,6 +70,6 @@
 
 | 日期 | dmr 版本 | Q1 | Q2 | Q3 | Q4 | Q5 | 均分 | 备注 |
 |------|---------|----|----|----|----|----|------|------|
-| （首次运行后填写） | | | | | | | | baseline 未测 |
+| 2026-08-20 | 2.5.0 | — | — | — | — | — | — | smoke test: pytest 8/8 ✓ + validate_report PASS/FAIL ✓ + validate_param_card PASS/FAIL ✓ + source_health exit 0 ✓；5 题基线待独立会话执行 |
 
 > 首次运行为 baseline，此后任何分数下降 >5 分须定位根因（源质量 / 流程改动 / 环境变化）并记录。
