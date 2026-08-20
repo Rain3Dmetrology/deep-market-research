@@ -1,5 +1,22 @@
 ﻿# Changelog
 
+## [2.5.0] - 2026-08-19
+
+程序化可信度门禁（A/B 落地）+ 研究参数卡单一权威 schema。
+
+### Added
+- **报告机检门禁 `scripts/validate_report.py`**：零依赖（仅标准库）、离线安全（死链检查默认关闭）、不阻断 Step 0->8 主管线；校验 6 条 lint（R0 章节骨架 / R1 来源出处 / R2 `Confirmed` 须 ≥2 个 T1-3 独立源 / R3 矛盾台账 / R4 推断标注 LOW / R5 开放问题标注环境受限）——输出 PASS/FAIL + 覆盖率，退出码 0/1 供 CI 或 Phase N 拦截；支持 `--template` / `--strict` / `--json`。
+- **研究参数卡 schema 校验 `scripts/validate_param_card.py`**：零依赖、离线安全；自定义 YAML 子集解析器（刻意不引入 pyyaml，守住平台无关/零依赖护城河）；校验必含字段（课题/范围/实体清单/已收集来源池）、范围子字段、来源池层级∈T1-T4、日期格式 `YYYY|YYYY-MM|YYYY-MM-DD`。
+- **研究参数卡结构化 schema `references/parameter-card-schema.md`**：作为《研究参数卡》字段定义的**唯一权威**（调研分析专家团队《研究参数卡》、research-orchestrator `run-manifest.json` 参数卡快照 均引用此 schema，杜绝三重字段定义漂移）。
+
+### Changed
+- **§三-B 研究参数卡**：原 8 字段散文表替换为指向 `references/parameter-card-schema.md` 的单一权威指针；必含 `课题` / `范围` / `实体清单` / **`已收集来源池`**（强制，跨阶段复用唯一证据入口），推荐 `决策用途` / `模板` / `状态` / `语言` / `查询类型`。
+- **§终稿纪律**：追加第 0 条——可选程序化机检门禁（validate_report.py），交付前启发式前置拦截，不替代人工对抗审计，绝不阻断主管线。
+
+### Discipline
+- 严守平台无关/零依赖护城河：两个校验脚本仅用标准库，自定义 YAML 子集解析，不引入 pyyaml 等第三方依赖。
+- 单一权威纪律：参数卡字段只在一处（parameter-card-schema.md）定义，团队与编排器仅引用、不复写。
+
 ## [2.4.0] - 2026-08-19
 
 审计跟进（dmr-RAT 2026 audit C8 / D3 / D4）：监测场景模板化、知识沉淀强制化、质量回归可测量。

@@ -2,13 +2,14 @@
 name: deep-market-research
 slug: deep-market-research
 displayName: Deep Market Research
-version: "2.4.0"
+version: "2.5.0"
 summary: 深度市场 / 竞品 / 技术趋势调研工作流，输出稳定、可复现、带引用溯源的研究报告。
 description: |
   深度市场 / 竞品 / 技术趋势调研工作流，输出稳定、可复现、带引用溯源的研究报告。
-  v2.4.0 核心能力：确定性 Step 0->8 流水线 + NATO 式 4 级源分级 + >=2 源交叉验证 +
+  v2.5.0 核心能力：确定性 Step 0->8 流水线 + NATO 式 4 级源分级 + >=2 源交叉验证 +
   主动去重/去陈旧/去伪造/去矛盾 + 平台无关（默认零依赖，可选 MCP/API 后端优雅降级）+
-  监测增量模板 E + 强制实体级证据缓存。
+  监测增量模板 E + 强制实体级证据缓存 + **程序化机检门禁**（validate_report.py 报告 lint /
+  validate_param_card.py 研究参数卡 schema，均零依赖、离线安全、不阻断主管线）。
   适用：市场调研、竞品分析、行业格局、技术趋势、竞品对位、尽调、产业链研究、投资机会发现、周期监测。
 license: MIT
 compatibility: >
@@ -20,14 +21,14 @@ compatibility: >
   v2.2.1 已永久删除 6 个冗余 absorbed skill（不可逆）；方法论已并入本流程。
   HONESTY RULE: only list skills/connectors actually available in the environment.
 metadata:
-  version: "2.4.0"
+  version: "2.5.0"
   author: "Rain / WorkBuddy"
   adapted_from: "sota-research + RSSnewsnowTrendRadar + 行业趋势深度调研 + 公司竞品深度调研 + market-researcher + material-organizer + llm-wiki + NATO Admiralty + Cat-Research。详见 references/optional-modules.md。"
 ---
 
 # Deep Market Research Workflow -- 深度市场调研工作流
 
-> 版本: 2.4.0 | 许可证: MIT
+> 版本: 2.5.0 | 许可证: MIT
 > 设计目标：**输出质量稳定、可复现、去重去旧去假去矛盾、并吸收真实用户热评**。
 
 ---
@@ -222,16 +223,7 @@ metadata:
 
 **1 研究参数卡（跨阶段共享上下文）**：从 Step 0 起维护一张结构化参数卡，每次阶段切换时**整卡传递**给下一阶段，避免跨阶段信息丢失。
 
-| 字段 | 说明 | 示例 |
-|------|------|------|
-| 课题 | 一句话描述 | 工业AI 3D视觉测量竞争格局 |
-| 查询类型 | 快版/标准/深度 | 标准 |
-| 模板 | A/B/C/D | C（公司竞品） |
-| timeRange | 近3月/6月/1年/2年/全部 | 近1年 |
-| 语言 | 中文/英文/双语 | 双语 |
-| 已收集来源池 | Step 1-3累积的来源列表 | [持续追加] |
-| 矛盾台账 | Step 5发现的矛盾点 | [持续追加] |
-| 已完成章节 | 三-B闭环使用 | [逐章追加] |
+> **字段定义以 `references/parameter-card-schema.md`（v2.5.0 结构化 schema）为唯一权威**（调研分析专家团队《研究参数卡》、research-orchestrator `run-manifest.json` 参数卡快照 均引用此 schema，杜绝三重字段定义漂移）。必含字段：`课题` / `范围` / `实体清单` / **`已收集来源池`**（强制，跨阶段复用唯一证据入口）；推荐：`决策用途` / `模板` / `状态` / `语言` / `查询类型`。可用 `python scripts/validate_param_card.py <卡片.yaml>` 在 Phase 0/1 入口做前置机检（零依赖、离线安全）。
 
 **2 五阶段闭环（深度研究专用）**
 - **Phase 1 初始调研**：广泛初调生成研究摘要（定义背景 / 主流观点 / 争议焦点 / 关键数据 / 主要参与者 / 最新进展）。
@@ -249,6 +241,8 @@ metadata:
 ### 终稿纪律：对抗式审计 + 来源树 + lint 自检
 
 > 以下为 Step 7->8 终稿阶段的质量纪律，**不新增工具、不新增数值门槛、不阻断 Step 0->8 主管线**。
+
+- **0 可选：程序化机检门禁（validate_report.py）**：交付前可运行 `python scripts/validate_report.py <报告.md> [--template A|B|C|D|E] [--strict] [--json]` 对下方第 5 项 6 条 lint 做机检，输出 PASS/FAIL + 覆盖率，退出码 0/1 供 CI 或 Phase N 拦截。**零依赖（仅标准库）、离线安全（死链检查默认关闭）**，脚本缺失或环境无 Python 则跳过、绝不阻断 Step 0->8 主管线。机检为启发式前置门禁，不替代人工对抗审计。
 
 - **1 对抗式审计（adversarial audit）**：终稿交付前，必须独立跑一轮「对抗式审计」--以一个 corpus critic 通读全篇找自相矛盾/无源结论，并至少并行 2 类 critic 角色挑战：
   - *事实一致性 critic*：每条结论是否都有对应 (源, 层级, 日期) 支撑？
