@@ -24,5 +24,8 @@ jobs:
       - name: Install dependencies
         run: pip install pytest pyyaml
 
+      - name: README drift gate
+        run: python scripts/readme_drift_check.py
+
       - name: Run tests
         run: pytest tests/ -v

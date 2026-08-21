@@ -2,11 +2,11 @@
 name: deep-market-research
 slug: deep-market-research
 displayName: Deep Market Research
-version: "2.6.0"
+version: "2.6.1"
 summary: 深度市场 / 竞品 / 技术趋势调研工作流，输出稳定、可复现、带引用溯源的研究报告。
 description: |
   深度市场 / 竞品 / 技术趋势调研工作流，输出稳定、可复现、带引用溯源的研究报告。
-  v2.6.0 核心能力：确定性 Step 0->8 流水线 + NATO 式 4 级源分级 + >=2 源交叉验证 +
+  核心能力：确定性 Step 0->8 流水线 + NATO 式 4 级源分级 + >=2 源交叉验证 +
   主动去重/去陈旧/去伪造/去矛盾 + 平台无关（默认零依赖，可选 MCP/API 后端优雅降级）+
   监测增量模板 E + 强制实体级证据缓存 + 程序化机检门禁（validate_report.py /
   validate_param_card.py，零依赖、离线安全）+ **plan-first 验收先行**（Step 0 产出
@@ -24,14 +24,14 @@ compatibility: >
   v2.2.1 已永久删除 6 个冗余 absorbed skill（不可逆）；方法论已并入本流程。
   HONESTY RULE: only list skills/connectors actually available in the environment.
 metadata:
-  version: "2.6.0"
+  version: "2.6.1"
   author: "Rain / WorkBuddy"
   adapted_from: "sota-research + RSSnewsnowTrendRadar + 行业趋势深度调研 + 公司竞品深度调研 + market-researcher + material-organizer + llm-wiki + NATO Admiralty + Cat-Research。详见 references/optional-modules.md。"
 ---
 
 # Deep Market Research Workflow -- 深度市场调研工作流
 
-> 版本: 2.6.0 | 许可证: MIT
+> 版本: 2.6.1 | 许可证: MIT
 > 设计目标：**输出质量稳定、可复现、去重去旧去假去矛盾、并吸收真实用户热评**。
 
 ---

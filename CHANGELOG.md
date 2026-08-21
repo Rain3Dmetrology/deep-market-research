@@ -1,5 +1,18 @@
 ﻿# Changelog
 
+## [2.6.1] - 2026-08-22
+
+README 门面同步 + README 漂移 CI 守卫（v2.4.0 起累积的门面漂移修复，内核零变化）。
+
+### Fixed
+- 中英 README 特性清单同步至实际能力：补 plan-first 验收先行 / 程序化机检门禁 / 研究参数卡 / 季度基准自测；「三套模板」改正为五套（A–E，含销售与商业化分析与监测增量）。
+- 中英 README FAQ 与端到端示例死链修复：由不存在的「SKILL.md 第八/九节」改指 references/faq.md（8 问）与 references/example.md。
+- 中英 README 目录结构同步：移除已删的 release_body.md，补 benchmarks/ / tests/ / sources.registry.yaml 与 scripts 实际内容。
+- 更新史行 v2.0.0 → v2.6.1；特性标题去除版本标签（防再漂移）。
+
+### Added
+- `scripts/readme_drift_check.py`：README 漂移守卫（零依赖、6 条检查：行数预算 / 模板数声明 / FAQ 指向 / 更新史对齐 CHANGELOG 顶行 / 已删文件禁列 / 版本化标题禁用），接入 test.yml CI。
+
 ## [2.6.0] - 2026-08-22
 
 P1 批（全局最优 spec v1.2 · S1 + S5）：plan-first 验收先行 + 模板 B 销售与商业化分析（市场侧，零新数据源）。

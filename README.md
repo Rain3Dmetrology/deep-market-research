@@ -10,7 +10,7 @@
 
 ---
 
-## ✨ 特性（v2.4.0）
+## ✨ 特性
 
 > 与通用 AI 搜索 / 深度研究 skill 的核心差异：**dmr 不是搜索包装，而是一条可复现、带置信标签、终稿对抗审计的调研流水线。**
 
@@ -19,9 +19,11 @@
 ### 独有优势
 
 - **确定性流水线**：固定 Step 0–8，每次可复现、可对比
+- **plan-first 验收先行**：Step 0 即产出验收标准（每条含度量锚点）＋ 终止条件三态（达标即停 / 预算耗尽即停 / 最多 N 轮），终稿逐条对照
 - **源分级置信**：T1 官方 / T2 专家 / T3 二手 / T4 社媒，每条结论带置信标签
-- **≥2 源交叉验证**：事实拆解，冲突显式标注，不强行共识
+- **≥2 源交叉验证**：事实拆解，冲突显式标注，不强行共识；竞品关键参数须 ≥3 源
 - **终稿对抗审计**：终稿前独立 critic 挑战，局部修补，不整篇重写
+- **程序化机检门禁**：`validate_report.py`（6 条 lint）＋ `validate_param_card.py`（参数卡校验），零依赖、离线安全，交付前可机检
 - **中文/CJK 原生支持**：公众号、知乎、小红书、CNKI 等中文源不丢弃、不当 junk
 - **零安装 Skill**：纯方法论，调用 Agent 内置工具，无需额外 Python 依赖
 - **可选工具永不阻断**：Exa / Firecrawl / Tavily / Perplexity / GPT Researcher / ModelScope 有则增强，缺失优雅降级
@@ -29,11 +31,13 @@
 
 ### 输出能力
 
-- **三套模板**：通用调研 / 行业赛道（麦肯锡风）/ 公司竞品（SWOT + 情景推演）
+- **五套模板**：通用 / 行业赛道（麦肯锡风，含销售与商业化分析）/ 公司竞品（SWOT + 情景推演）/ 学术 / 监测增量
 - **intel-brief 风格**：事实 → 影响 → 原因三元组织
 - **学术模块**：arXiv / PubMed / OpenAlex / Semantic Scholar / CNKI，优先免费 API
-- **分析透镜**：波特五力 / PESTEL / BCG / 3C / TAM-SOM，按意图触发，不堆砌
-- **增量沉淀**：结构化 markdown note（YAML frontmatter），对接 ima / Obsidian / 本地 wiki
+- **分析透镜**：波特五力 / PESTEL / BCG / 3C / TAM-SOM + 销售透镜，按意图触发，不堆砌
+- **研究参数卡**：结构化 schema 单一权威（必含来源池 + 推荐验收标准），跨阶段整卡传递
+- **增量沉淀**：结构化 markdown note（YAML frontmatter）+ 实体级证据缓存，对接 ima / Obsidian / 本地 wiki
+- **季度基准自测**：5 题固定基准 + Q6 销售路由回归题，分数演化防质量回归
 
 ### 技术栈与流水线（可视化）
 
@@ -99,10 +103,12 @@ Agent 会按 SKILL.md 的固定流程执行：范围收敛 → 多源采集 → 
 deep-market-research/
 ├── SKILL.md                      # 核心：元数据 + 完整工作流指令（Step 0–8 + 模板 + 透镜 + 质量规则）
 ├── README.md / README_EN.md     # 中英文说明
-├── release_body.md               # GitHub Release 描述
 ├── assets/                       # pipeline.svg + stack.svg 可视化图
-├── references/                   # 可选增强工具 + 模板 + FAQ + 示例 + 数据源表
-├── scripts/                      # 可选辅助：跨机器 MCP 同步 + FRED 宏观数据查询
+├── references/                   # 模板 + FAQ + 示例 + 参数卡 schema + 数据源表 + 可选工具指南
+├── scripts/                      # 机检门禁（validate_report / validate_param_card）+ README 漂移守卫 + 信源健康 + MCP 同步 + FRED
+├── benchmarks/                   # 5 题固定基准 + Q6 销售路由回归题 + 分数演化记录
+├── tests/                        # pytest 测试
+├── sources.registry.yaml         # 信源注册表（default / optional / deprecated 三层）
 ├── install.sh / install.ps1      # 一键安装脚本（Unix / Windows）
 ├── LICENSE                       # MIT
 ├── CONTRIBUTING.md               # 贡献指南
@@ -123,9 +129,9 @@ Skill 本身调用 Agent 内置联网工具（WebSearch / WebFetch）即可工�
 
 ## ❓ 常见问题与完整示例
 
-- **FAQ（7 问）**：见 SKILL.md [第八节 · FAQ](SKILL.md#八常见问题faq)
-- **端到端示例**：见 SKILL.md [第九节 · 完整示例](SKILL.md#九完整示例端到端从用户提问到报告)
-- **完整更新史**：v2.0.0 → v2.4.0 — 见 [CHANGELOG.md](CHANGELOG.md)
+- **FAQ（8 问）**：见 [references/faq.md](references/faq.md)
+- **端到端示例**：见 [references/example.md](references/example.md)（工业机器人赛道调研）
+- **完整更新史**：v2.0.0 → v2.6.1 — 见 [CHANGELOG.md](CHANGELOG.md)
 
 ---
 
