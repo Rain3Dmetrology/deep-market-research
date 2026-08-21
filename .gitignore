@@ -49,6 +49,7 @@ Thumbs.db
 # Reports (generated outputs)
 research_report_*.md
 *.log
+parity_report.json
 
 # Release drafting artifacts (scratch, not tracked)
 release_body.md
