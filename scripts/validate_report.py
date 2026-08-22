@@ -16,6 +16,12 @@ dmr SKILL.md「终稿纪律 · 5 输出前 lint 自检清单」的**可度量前
 - **不阻断主管线**：本脚本是「门禁建议」，不修改报告、不调用任何 agent / 进程。
 - **机检≠语义证明**：凡涉及「论证是否充分」「是否真独立」之处，均为可解释启发式，
   输出会显式标注启发式边界，避免伪造确定性。
+- **排版容差（防误报）**：章节标题带限定词（如「矛盾台账（证据冲突裁决记录）」）
+  视为命中对应角色；「层级」格以 T1-T4 开头才算证据行（散文提及「T1-3」不误判）；
+  R2 合格引用同时计入内联「源A(T1, 日期)」与证据表行（层级 + 日期 + URL/DOI/裸域名），
+  对齐 §七 实体级证据缓存表形态；auto 模式检测到「本期变化总览」即按模板 E 角色集
+  校验（模板 E 无独立矛盾台账章节，冲突由置信迁移/双方案并列承载）——
+  机检不因 LLM 排版变体或模板形态误报 FAIL。
 
 用法
 ----
@@ -77,6 +83,9 @@ RE_TIER = re.compile(r"\bT([1-4])\b")
 RE_DATE = re.compile(r"\b(?:19|20)\d{2}(?:-(?:0[1-9]|1[0-2])(?:-(?:0[1-9]|[12]\d|3[01]))?)?\b")
 RE_URL = re.compile(r"https?://\S+", re.IGNORECASE)
 RE_DOI = re.compile(r"(?:DOI:?\s*|doi\.org/)\s*10\.\S+", re.IGNORECASE)
+# 裸域名（无 scheme，如 keyence.com.cn / overview.ai）：末位标签须为纯字母 2-6 位，
+# 排除数值误报（83.0% / v2.6.1 / 2026.08.22 均不匹配）。
+RE_BARE_DOMAIN = re.compile(r"(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z]{2,6}\b", re.IGNORECASE)
 RE_PAREN = re.compile(r"\(([^()]*)\)")
 RE_CONFIRMED_TAG = re.compile(r"\[(Confirmed|Corroborated|Single-source|Unverified)\]", re.IGNORECASE)
 RE_CONFLICT_WORD = re.compile(r"矛盾|Conflicting|conflicting", re.IGNORECASE)
@@ -104,10 +113,18 @@ def split_sections(text: str) -> List[Tuple[str, str]]:
 
 
 def find_section(sections, role: str) -> Optional[str]:
-    """返回第一个命中该角色的节正文；未命中返回 None。"""
+    """返回第一个命中该角色的节正文；未命中返回 None。
+
+    标题装饰容差：先做精确匹配（任一候选完全相等）；无精确命中再做包含匹配——
+    「矛盾台账（证据冲突裁决记录）」命中「矛盾台账」、「质量自检与方法论合规声明」
+    命中「方法论与合规声明」。LLM 产出常给章节名追加限定词，机检不为此误报缺章节。
+    """
     wanted = ROLE_TITLES[role]
     for title, body in sections:
         if title in wanted:
+            return body
+    for title, body in sections:
+        if any(w in title for w in wanted):
             return body
     return None
 
@@ -139,13 +156,31 @@ def parse_tables(text: str) -> List[List[List[str]]]:
 RE_CITE = re.compile(r"([\w./\-·]+?)\s*\(\s*(T[1-3])\s*,\s*(\d{4}(?:-\d{1,2}){0,2})\s*\)")
 
 
+def _source_id(s: str) -> Optional[str]:
+    """从文本片段提取可识别来源：URL > DOI > 裸域名。
+
+    裸域名（无 scheme）取域名部分（不含路径），同一站点不同路径不会
+    被计为多个独立源；纯数字/版本号（83.0%、v2.6.1）不构成来源。
+    """
+    m = RE_URL.search(s)
+    if m:
+        return m.group(0)
+    m = RE_DOI.search(s)
+    if m:
+        return m.group(0)
+    m = RE_BARE_DOMAIN.search(s)
+    if m:
+        return m.group(0)
+    return None
+
+
 def qualified_citations_in(text: str) -> List[Tuple[str, str, str]]:
     """
     提取「合格引用」：含 T1-T3 层级 + 日期 + 可识别来源。
     覆盖两种形态：
       (a) 源A(T1, 2025-03) —— 来源令牌在括号外（dmr 主流写法）；
-      (b) (https://... T1 2025-03) —— URL/DOI 在括号内（兜底）。
-    返回 [(tier, date, source_id)]，source_id 取 URL/DOI 或来源令牌。
+      (b) (https://... T1 2025-03) —— URL/DOI/裸域名在括号内（兜底）。
+    返回 [(tier, date, source_id)]，source_id 取 URL/DOI 或裸域名。
     用于 lint 第2项（Confirmed 需 >=2 独立 T1-3）。
     """
     out = []
@@ -154,7 +189,7 @@ def qualified_citations_in(text: str) -> List[Tuple[str, str, str]]:
         if len(src_tok) < 1:
             continue
         out.append((tier, date, src_tok))
-    # 形态 (b)：括号内同时含 T1-3 + 日期 + URL/DOI
+    # 形态 (b)：括号内同时含 T1-3 + 日期 + URL/DOI/裸域名
     for grp in RE_PAREN.findall(text):
         tier_m = RE_TIER.search(grp)
         if not tier_m:
@@ -162,24 +197,17 @@ def qualified_citations_in(text: str) -> List[Tuple[str, str, str]]:
         tier = "T" + tier_m.group(1)
         if tier not in ("T1", "T2", "T3"):
             continue
-        if not RE_DATE.search(grp):
+        dm = RE_DATE.search(grp)
+        if not dm:
             continue
-        url_m = RE_URL.search(grp)
-        doi_m = RE_DOI.search(grp)
-        if url_m:
-            out.append((tier, RE_DATE.search(grp).group(0), url_m.group(0)))
-        elif doi_m:
-            out.append((tier, RE_DATE.search(grp).group(0), doi_m.group(0)))
+        src = _source_id(grp)
+        if src:
+            out.append((tier, dm.group(0), src))
     return out
 
 
-def check_rule1_evidence(text: str) -> Tuple[str, str, int]:
-    """
-    lint 第1项：每条 T 层级证据行须带 层级 + 日期 + 可识别来源。
-    只在「表头含 层级 且含 日期」的证据表中检查数据行。
-    """
-    violations = 0
-    total_tiered = 0
+def evidence_tables(text: str):
+    """产出 (rows, tier_idx, date_idx)：表头同时含「层级」与「日期」的证据表。"""
     for rows in parse_tables(text):
         header = [c.lower() for c in rows[0]]
         if not any("层级" in h or h == "tier" for h in header):
@@ -191,11 +219,51 @@ def check_rule1_evidence(text: str) -> Tuple[str, str, int]:
             date_idx = next(k for k, h in enumerate(header) if "日期" in h or h == "date")
         except StopIteration:
             continue
+        yield rows, tier_idx, date_idx
+
+
+def table_citations_in(text: str) -> List[Tuple[str, str, str]]:
+    """证据表行引用：行内同时含 T1-3 层级（层级格以 T 开头）、日期与 URL/DOI/裸域名。
+
+    dmr §七 强制「实体级证据缓存表」（实体 | 字段 | 值 | 源URL | 层级 | 日期 | 置信），
+    以表格承载证据的报告同样给 R2 计入合格引用，而非只认内联「源A(T1, 日期)」形态。
+    源列写裸域名（keyence.com.cn，无 scheme）同样视为可识别来源。
+    """
+    out: List[Tuple[str, str, str]] = []
+    for rows, tier_idx, date_idx in evidence_tables(text):
+        for r in rows[2:]:
+            if len(r) <= max(tier_idx, date_idx):
+                continue
+            tm = RE_TIER.match(r[tier_idx])
+            if not tm or tm.group(1) not in ("1", "2", "3"):
+                continue
+            dm = RE_DATE.search(r[date_idx])
+            if not dm:
+                continue
+            src = None
+            for c in r:
+                src = _source_id(c)
+                if src:
+                    break
+            if src:
+                out.append(("T" + tm.group(1), dm.group(0), src))
+    return out
+
+
+def check_rule1_evidence(text: str) -> Tuple[str, str, int]:
+    """
+    lint 第1项：每条 T 层级证据行须带 层级 + 日期 + 可识别来源。
+    只在「表头含 层级 且含 日期」的证据表中检查数据行；层级格须以 T1-T4 开头
+    才算证据行（散文中提及「T1-3」不误判）。
+    """
+    violations = 0
+    total_tiered = 0
+    for rows, tier_idx, date_idx in evidence_tables(text):
         for r in rows[2:]:  # 跳过表头 + 分隔
             if len(r) <= max(tier_idx, date_idx):
                 continue
             tier_cell = r[tier_idx]
-            tm = RE_TIER.search(tier_cell)
+            tm = RE_TIER.match(tier_cell)
             if not tm:
                 continue
             total_tiered += 1
@@ -219,7 +287,7 @@ def check_rule2_confirmed(text: str) -> Tuple[str, str]:
     文档级启发式：若报告出现 Confirmed 断言，则全篇合格 T1-3 引用去重后须 >=2。
     """
     has_confirmed = bool(re.search(r"Confirmed", text, re.IGNORECASE)) or bool(RE_CONFIRMED_TAG.search(text))
-    quals = qualified_citations_in(text)
+    quals = qualified_citations_in(text) + table_citations_in(text)
     distinct = set((t, s) for (t, _, s) in quals)
     if not has_confirmed:
         return ("PASS", "报告未使用 Confirmed 断言，第2项不适用")
@@ -233,10 +301,17 @@ def check_rule3_contradiction(text: str, sections) -> Tuple[str, str]:
     lint 第3项：矛盾未强行合一（双方案并列）。
     - 若报告出现矛盾标记但未设 矛盾台账 章节 -> FAIL。
     - 若设了 矛盾台账 章节但为空/无双方案 -> WARN。
+    - 模板 E（监测增量）无独立矛盾台账章节：冲突由「置信迁移/变化项明细」承载，
+      以全文双方案并列标记（并存/方案A|B/双口径）替代章节存在性检查。
     """
     has_conflict_word = bool(RE_CONFLICT_WORD.search(text))
     ledger = find_section(sections, "contradiction")
+    is_e_style = find_section(sections, "delta") is not None
     if has_conflict_word and ledger is None:
+        if is_e_style:
+            if re.search(r"说法[AB]|方案[AB]|并存|双方案|双口径", text):
+                return ("PASS", "模板 E 监测报告：冲突经置信迁移/双方案并列显式标注（模板 E 无独立矛盾台账章节）")
+            return ("FAIL", "模板 E 报告出现矛盾标记，但未见双方案并列（并存/方案A|B/双口径）")
         return ("FAIL", "报告出现矛盾/Conflicting 标记，但缺少「矛盾台账」章节显式并列双方案")
     if ledger is not None:
         has_two_sides = bool(re.search(r"说法[AB]|方案[AB]|A\(|B\(|并存|双方案", ledger)) or "|" in ledger
@@ -299,16 +374,23 @@ def check_rule6_links(text: str, do_check: bool) -> Tuple[str, str]:
 
 
 def required_sections_check(sections, template: str) -> Tuple[List[str], List[str]]:
-    """返回 (缺失角色列表, 命中角色列表)。"""
+    """返回 (缺失角色列表, 命中角色列表)。
+
+    auto 模式模板识别：检测到「本期变化总览」（delta 角色）即按模板 E 角色集校验——
+    模板 E 监测增量报告无执行摘要/矛盾台账独立章节，套用 A-D 角色集会误报缺章节。
+    """
     roles = TEMPLATE_REQUIRED.get(template, TEMPLATE_REQUIRED["auto"])
+    is_e_style = find_section(sections, "delta") is not None
+    if template == "auto" and is_e_style:
+        roles = TEMPLATE_REQUIRED["E"]
     missing, present = [], []
     for role in roles:
         if find_section(sections, role) is None:
             missing.append(role)
         else:
             present.append(role)
-    # auto 模式附加：若用矛盾标记则强制矛盾台账
-    if template == "auto" and find_section(sections, "contradiction") is None:
+    # auto 模式附加：若用矛盾标记则强制矛盾台账（模板 E 除外：冲突由置信迁移承载）
+    if template == "auto" and not is_e_style and find_section(sections, "contradiction") is None:
         if RE_CONFLICT_WORD.search("".join(b for _, b in sections)):
             missing.append("contradiction")
     return missing, present
@@ -388,21 +470,11 @@ def _provenance_coverage(text: str) -> Optional[float]:
     """带层级证据行中「含 日期+可识别来源」的比例。无证据表 -> None（N/A）。"""
     total = 0
     ok = 0
-    for rows in parse_tables(text):
-        header = [c.lower() for c in rows[0]]
-        if not any("层级" in h or h == "tier" for h in header):
-            continue
-        if not any("日期" in h or h == "date" for h in header):
-            continue
-        try:
-            tier_idx = next(k for k, h in enumerate(header) if "层级" in h or h == "tier")
-            date_idx = next(k for k, h in enumerate(header) if "日期" in h or h == "date")
-        except StopIteration:
-            continue
+    for rows, tier_idx, date_idx in evidence_tables(text):
         for r in rows[2:]:
             if len(r) <= max(tier_idx, date_idx):
                 continue
-            if not RE_TIER.search(r[tier_idx]):
+            if not RE_TIER.match(r[tier_idx]):
                 continue
             total += 1
             date_ok = bool(RE_DATE.search(r[date_idx]))
@@ -421,7 +493,7 @@ def _confirmed_backing(text: str) -> Optional[float]:
     """Confirmed 断言是否有 >=2 独立 T1-3 合格引用：有则 100，无则 0；无 Confirmed -> None。"""
     if not (re.search(r"Confirmed", text, re.IGNORECASE) or RE_CONFIRMED_TAG.search(text)):
         return None
-    distinct = set((t, s) for (t, _, s) in qualified_citations_in(text))
+    distinct = set((t, s) for (t, _, s) in qualified_citations_in(text) + table_citations_in(text))
     return 100.0 if len(distinct) >= 2 else 0.0
 
 
