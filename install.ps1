@@ -3,7 +3,7 @@
 
 $SkillDir = "deep-market-research"
 $Src = Split-Path -Parent $MyInvocation.MyCommand.Path
-$Files = @("SKILL.md", "README.md", "README_EN.md", "references", "assets", "benchmarks", "LICENSE", "CONTRIBUTING.md", ".gitignore")
+$Files = @("SKILL.md", "README.md", "README_EN.md", "references", "assets", "benchmarks", "scripts", "LICENSE", "CONTRIBUTING.md", ".gitignore")
 
 $Targets = @(
   "$env:USERPROFILE\.claude\skills",
@@ -28,6 +28,9 @@ foreach ($base in $Targets) {
         Copy-Item -Recurse -Force $srcPath $dest
       }
     }
+    # Never ship Python bytecode caches to skill directories.
+    Get-ChildItem -Path $dest -Recurse -Directory -Filter "__pycache__" -ErrorAction SilentlyContinue |
+      Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
     Write-Host "Installed to $dest"
     $installed++
   }
