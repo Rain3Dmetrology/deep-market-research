@@ -2,7 +2,7 @@
 name: deep-market-research
 slug: deep-market-research
 displayName: Deep Market Research
-version: "2.7.0"
+version: "2.7.1"
 summary: 深度市场 / 竞品 / 技术趋势调研工作流，输出稳定、可复现、带引用溯源的研究报告。
 description: |
   深度市场 / 竞品 / 技术趋势调研工作流，输出稳定、可复现、带引用溯源的研究报告。
@@ -23,7 +23,7 @@ compatibility: >
   degrade gracefully when absent. See references/cross-platform-tools.md for per-platform setup.
   HONESTY RULE: only list skills/connectors actually available in the environment.
 metadata:
-  version: "2.7.0"
+  version: "2.7.1"
   author: "Rain / WorkBuddy"
   adapted_from: "sota-research + RSSnewsnowTrendRadar + 行业趋势深度调研 + 公司竞品深度调研 + market-researcher + material-organizer + llm-wiki + NATO Admiralty + Cat-Research。详见 references/optional-modules.md。"
 ---

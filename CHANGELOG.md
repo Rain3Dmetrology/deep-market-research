@@ -1,5 +1,13 @@
 ﻿# Changelog
 
+## [2.7.1] - 2026-08-22
+
+热修复（installer-only，内核零变化）：install.sh 由 base64 blob 重写为可运行纯 bash，与 install.ps1 对齐。
+
+### Fixed
+- **install.sh 分发 scripts/ 与 benchmarks/ ＋ 排除 __pycache__**：v2.7.0 的 install.sh 为 base64 blob 且缺 `scripts`/`benchmarks` 分发——Linux/macOS 安装后技能目录缺 SKILL.md 运行时引用的机检脚本。重写为纯 bash 并固定 LF（`.gitattributes`），补齐 `.trae-cn` 目标。
+- **真机冒烟验证**：在 ubuntu:22.04 容器内以真实 bash 执行修复后 install.sh —— scripts×2 / benchmarks / SKILL.md 全部落位、`__pycache__` 清除，PASS（补上此前缺失的 Linux 实机验证）。
+
 ## [2.7.0] - 2026-08-22
 
 P1 瘦身（基准首跑建基线后执行，内核零变化）：模式选择三处重复收敛至 §四唯一权威 + 考古句清理 + 校验器排版/模板容差（scripts/，SKILL.md 零改动）。

@@ -131,7 +131,7 @@ Skill 本身调用 Agent 内置联网工具（WebSearch / WebFetch）即可工�
 
 - **FAQ（8 问）**：见 [references/faq.md](references/faq.md)
 - **端到端示例**：见 [references/example.md](references/example.md)（工业机器人赛道调研）
-- **完整更新史**：v2.0.0 → v2.7.0 — 见 [CHANGELOG.md](CHANGELOG.md)
+- **完整更新史**：v2.0.0 → v2.7.1 — 见 [CHANGELOG.md](CHANGELOG.md)（v2.7.1 为 install.sh 热修复）
 
 ---
 
