@@ -131,7 +131,7 @@ The skill itself works using the agent's built-in web tools (WebSearch / WebFetc
 
 - **FAQ (8 questions)**: see [references/faq.md](references/faq.md)
 - **End-to-end example**: see [references/example.md](references/example.md) (industrial-robotics track research)
-- **Full changelog**: v2.0.0 → v2.6.1 — see [CHANGELOG.md](CHANGELOG.md)
+- **Full changelog**: v2.0.0 → v2.7.0 — see [CHANGELOG.md](CHANGELOG.md)
 
 ---
 
