@@ -30,7 +30,7 @@ metadata:
 
 # Deep Market Research Workflow -- 深度市场调研工作流
 
-> 版本: 2.7.0 | 许可证: MIT
+> 版本: 2.7.1 | 许可证: MIT
 > 设计目标：**输出质量稳定、可复现、去重去旧去假去矛盾、并吸收真实用户热评**。
 
 ---
@@ -345,7 +345,7 @@ metadata:
     > runtime探测：可选skill可用性判断 = try-and-skip（尝试调用并捕获失败），不预检skill是否加载。与规则17一致：失败一律优雅跳过。
 18. 竞品关键参数单源下定论 -> **定价 / 版本号 / MCP 支持 / 许可证 / 收购归属**等可量化事实，交叉验证源数须 **>=3 个独立源**。
 19. 把可选工具当质量前提 -> 可选工具**只丰富素材来源，不是质量必需**。
-20. 绑定特定平台机制 -> 本技能**不假设任何平台的 MCP 配置文件、agent-team 编排协议或专有后端存在**。
+20. 绑定特定平台机制 -> 本技能**不假设任何平台的 MCP 配置文件、agent-team 编排协议或专有后端存在**——多智能体编排由上层编排层（如 RAT）承担，本内核保持协议无关。
 21. "独立源"未定义导致交叉验证虚高 -> 独立性判定3条规则：
     a. 引用链去重：若源B的报道明确引用源A的内容，则A+B视为1个独立源（非2个）。
     b. 通讯社转载去重：同一通讯社（Reuters/AP/Xinhua等）的多家媒体转载视为1个独立源。
@@ -374,7 +374,7 @@ metadata:
 | `references/faq.md` | 常见问题（8 问） |
 | `references/example.md` | 端到端完整示例（工业机器人赛道调研） |
 | `references/parameter-card-schema.md` | 研究参数卡结构化 schema 唯一权威（含 `验收标准` 推荐字段） |
-| `CHANGELOG.md` | 完整更新史（v2.0.0 -> v2.7.0） |
+| `CHANGELOG.md` | 完整更新史（v2.0.0 -> v2.7.1） |
 | `benchmarks/industrial-vision-baseline.md` | 5 题固定基准集（工业视觉域）+ Q6 销售路由回归题 + 季度分数演化记录 |
 | `sources.registry.yaml` | 信源注册表（default / optional / deprecated 三层） |
 | `scripts/source_health.py` | 信源健康监控 + 静态 PR 一致性门禁 |

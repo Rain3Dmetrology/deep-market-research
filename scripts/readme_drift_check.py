@@ -14,6 +14,8 @@ Checks (exit 1 on any failure):
       in the directory tree
   R6  feature headings carry no version tags — versioned headings rot into
       stale claims (the exact drift this script was created to prevent)
+  R7  SKILL.md version tokens all match the CHANGELOG top version —
+      hotfixes that only patch the frontmatter rot the body tokens
 """
 import re
 import sys
@@ -69,6 +71,18 @@ for name, text in (("README.md", readme_cn), ("README_EN.md", readme_en)):
     for pat in ("特性（v", "Features (v"):
         if pat in text:
             errors.append(f"R6: {name} carries a version-tagged features heading {pat!r} — describe capabilities, not versions")
+
+# R7 — SKILL.md version tokens must all equal the CHANGELOG top version
+skill = (ROOT / "SKILL.md").read_text(encoding="utf-8")
+if top_version:
+    tokens = re.findall(r'^version: "([\d.]+)"', skill, re.MULTILINE)
+    tokens += re.findall(r"^> 版本: ([\d.]+) \|", skill, re.MULTILINE)
+    tokens += re.findall(r"完整更新史（v[\d.]+ -> v([\d.]+)）", skill)
+    if not tokens:
+        errors.append("R7: SKILL.md carries no version tokens (parser drift?)")
+    for tok in set(tokens):
+        if tok != top_version:
+            errors.append(f"R7: SKILL.md version token {tok} != CHANGELOG top v{top_version}")
 
 if errors:
     print("README DRIFT GATE FAILED:")

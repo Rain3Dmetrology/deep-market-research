@@ -8,6 +8,11 @@
 - **install.sh 分发 scripts/ 与 benchmarks/ ＋ 排除 __pycache__**：v2.7.0 的 install.sh 为 base64 blob 且缺 `scripts`/`benchmarks` 分发——Linux/macOS 安装后技能目录缺 SKILL.md 运行时引用的机检脚本。重写为纯 bash 并固定 LF（`.gitattributes`），补齐 `.trae-cn` 目标。
 - **真机冒烟验证**：在 ubuntu:22.04 容器内以真实 bash 执行修复后 install.sh —— scripts×2 / benchmarks / SKILL.md 全部落位、`__pycache__` 清除，PASS（补上此前缺失的 Linux 实机验证）。
 
+### Amended (2026-08-24 · 治理规范 v2.2 对齐审计勘误，docs-only)
+- **SKILL.md 正文版本对齐 2.7.1**（审计 F1）：正文头 `> 版本:` 与参考索引 `CHANGELOG.md` 行两处残留 2.7.0——v2.7.1 热修复仅覆盖 frontmatter 两种格式，正文格式不同未命中；README 漂移守卫新增 R7（SKILL.md 版本一致性）防复发。
+- **规则 20 补分工边界**（审计 F9）：尾部加「多智能体编排由上层编排层（如 RAT）承担，本内核保持协议无关」。
+- **参数卡 schema 验收标准补「假设失效」语义**（审计 M3）：核心前置假设被证伪时达标即停不适用——显式披露并复用介入窗口请用户重定界；不新增第四态（守住三态封闭枚举与「不新增循环」原则）。
+
 ## [2.7.0] - 2026-08-22
 
 P1 瘦身（基准首跑建基线后执行，内核零变化）：模式选择三处重复收敛至 §四唯一权威 + 考古句清理 + 校验器排版/模板容差（scripts/，SKILL.md 零改动）。
