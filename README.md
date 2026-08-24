@@ -135,6 +135,19 @@ Skill 本身调用 Agent 内置联网工具（WebSearch / WebFetch）即可工�
 
 ---
 
+## 🔁 发布清单（维护者）
+
+1. 本地门禁：`python scripts/readme_drift_check.py`（R1–R7）＋ `python -m pytest tests/` 全绿。
+2. 版本对齐：SKILL.md frontmatter ＋ 正文头 ＋ 参考索引 ＋ README/README_EN 更新史行 == CHANGELOG 顶行（R4/R7 机检兜底）。
+3. 双安装脚本冒烟：Windows `install.ps1`；Linux 容器或 Git Bash `install.sh`（核对 scripts/、benchmarks/ 落位＋ `__pycache__` 清除）。
+4. push main → CI 绿（Ubuntu pytest）。
+5. 内核变化时基准回归：benchmarks 5 题 ＋ Q6 销售路由（docs-only 勘误可豁免）。
+6. 打 `vX.Y.Z` tag 并推送。
+7. GitHub Release：notes 引用 CHANGELOG 对应条目，重建 tar.gz ＋ zip 资产；勘误以 `Amended` 并入既有条目，不打新 tag。
+8. 重跑安装脚本，核对各平台技能副本版本 = 新版本。
+
+---
+
 ## 📜 许可证
 
 [MIT License](LICENSE)

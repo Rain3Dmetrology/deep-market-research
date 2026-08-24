@@ -135,6 +135,19 @@ The skill itself works using the agent's built-in web tools (WebSearch / WebFetc
 
 ---
 
+## 🔁 Release checklist (maintainers)
+
+1. Local gates: `python scripts/readme_drift_check.py` (R1–R7) + `python -m pytest tests/` all green.
+2. Version parity: SKILL.md frontmatter + body header + reference index + README/README_EN changelog line == CHANGELOG top entry (R4/R7 enforced).
+3. Smoke both installers: `install.ps1` on Windows; `install.sh` in a Linux container or Git Bash (verify scripts/ + benchmarks/ placement and `__pycache__` cleanup).
+4. Push main → CI green (Ubuntu pytest).
+5. Benchmark regression when the kernel changes: benchmarks 5 questions + Q6 sales routing (docs-only errata exempt).
+6. Tag `vX.Y.Z` and push the tag.
+7. GitHub Release: notes quote the CHANGELOG entry; rebuild tar.gz + zip assets; errata merge as `Amended` into the existing entry, no new tag.
+8. Re-run the installer; verify every platform skill copy matches the new version.
+
+---
+
 ## 📜 License
 
 [MIT License](LICENSE)
