@@ -16,6 +16,7 @@ Covers at minimum (audit H6 / P1-6 batch-2 item 5):
 
 Run:  pytest tests/test_readme_drift_check.py
 """
+import os
 import re
 import shutil
 import subprocess
@@ -50,13 +51,17 @@ def _copy_repo(tmp_path):
     return dst
 
 
-def _run_gate(cwd):
+def _run_gate(cwd, extra_env=None):
     # stdin/stderr 显式 DEVNULL/合并：不继承父进程 stdio 句柄，
     # 规避 Windows 下父句柄不可继承时 Popen 报 WinError 6 的环境问题。
+    env = None
+    if extra_env:
+        env = dict(os.environ)
+        env.update(extra_env)
     return subprocess.run(
         [sys.executable, "scripts/readme_drift_check.py"],
         cwd=str(cwd), stdout=subprocess.PIPE, text=True, encoding="utf-8", errors="replace",
-        stdin=subprocess.DEVNULL, stderr=subprocess.STDOUT,
+        stdin=subprocess.DEVNULL, stderr=subprocess.STDOUT, env=env,
     )
 
 
@@ -182,3 +187,42 @@ def test_r6_version_tagged_heading(tmp_path):
     proc = _run_gate(repo)
     assert proc.returncode == 1
     assert "R6: README.md carries a version-tagged features heading" in proc.stdout
+
+
+# --- Windows 受限编码控制台回归（cp1252/GBK） -----------------------------------
+# 守护场景（对齐 validate_report / validate_param_card 的 _configure_stdio 先例）：
+# 错误明细含中文（如 R3 死锚点 '第八节'、R6 '特性（v'），Windows cp1252/GBK 控制台
+# 裸跑时 print 抛 UnicodeEncodeError，真实漂移失败与编码崩溃无法区分。
+# 脚本入口的 _configure_stdio() 修复后：不得再抛编码异常，且退出码语义不变。
+
+def test_cp1252_console_chinese_drift_error_does_not_crash(tmp_path):
+    repo = _copy_repo(tmp_path)
+    readme = repo / "README.md"
+    # 注入含中文的 R3 死锚点漂移（等价于 CI windows-latest 失败用例场景）
+    readme.write_text(readme.read_text(encoding="utf-8") + "\n详见 SKILL.md 第八节。\n",
+                      encoding="utf-8")
+    proc = _run_gate(repo, extra_env={"PYTHONIOENCODING": "cp1252"})
+    # 退出码语义不变：真实漂移失败仍为 1，而非编码崩溃的 traceback 退出
+    assert proc.returncode == 1, proc.stdout
+    assert "UnicodeEncodeError" not in proc.stdout
+    assert "R3: README.md references dead SKILL.md anchor" in proc.stdout
+
+
+def test_gbk_console_version_tagged_heading_error_does_not_crash(tmp_path):
+    repo = _copy_repo(tmp_path)
+    readme = repo / "README.md"
+    readme.write_text(readme.read_text(encoding="utf-8") + "\n## 特性（v2.8）\n",
+                      encoding="utf-8")
+    proc = _run_gate(repo, extra_env={"PYTHONIOENCODING": "gbk"})
+    assert proc.returncode == 1, proc.stdout
+    assert "UnicodeEncodeError" not in proc.stdout
+    assert "R6: README.md carries a version-tagged features heading" in proc.stdout
+
+
+def test_cp1252_console_clean_repo_still_passes(tmp_path):
+    # 无漂移时：受限编码控制台下仍正常 PASS（退出码 0 语义不变）
+    repo = _copy_repo(tmp_path)
+    proc = _run_gate(repo, extra_env={"PYTHONIOENCODING": "cp1252"})
+    assert proc.returncode == 0, proc.stdout
+    assert "UnicodeEncodeError" not in proc.stdout
+    assert "README DRIFT GATE PASSED" in proc.stdout

@@ -21,6 +21,22 @@ import re
 import sys
 from pathlib import Path
 
+
+def _configure_stdio() -> None:
+    """把 stdout/stderr 设为 UTF-8，避免 Windows 默认 cp1252/GBK 控制台无法输出
+    中文错误明细（如 R3 死锚点、R6 版本化标题）时 print 抛 UnicodeEncodeError、
+    进程以非预期退出码崩溃（真实漂移失败与编码崩溃无法区分）。
+    与 validate_report.py / validate_param_card.py / setup_mcp.py 入口适配同语义；
+    按「脚本独立可运行」惯例各脚本自包含，不提取共享模块。"""
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(encoding="utf-8", errors="replace")
+        except (AttributeError, OSError, ValueError):
+            pass
+
+
+_configure_stdio()
+
 ROOT = Path(__file__).resolve().parent.parent
 errors = []
 

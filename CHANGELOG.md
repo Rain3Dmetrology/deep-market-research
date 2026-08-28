@@ -20,6 +20,7 @@
 - **M7 · 用例数勘误（Amended 形式）**：v2.7.0 条目用例数表述失准处已以 Amended 勘误（test_validate_report.py 实测 13 用例，21 为两文件总数），语义同「勘误不打新 tag」。
 - **M8 · 版本标记去硬编码**：脚本 / 文档中钉死的版本号改为参数化或动态读取，防版本漂移再发。
 - **L1-L7 · 细节修正**：模板确认度列削减、词表标签修正、中英双语文案对齐、CI 补 Windows 矩阵、校验器异常处理补强。
+- **CI Windows 编码热修（勘误级，不新增版本号不打新 tag）**：`readme_drift_check.py` 入口补 `_configure_stdio()`（对齐校验器既有方案），修复 windows-latest cp1252/GBK 控制台下打印中文错误明细触发的 UnicodeEncodeError；新增 3 条受限编码回归用例（套件 80 → 83）。
 
 ### Added
 - **T-03 · AgentKey 源注册**：sources.registry.yaml optional 层注册 AgentKey（实测 2026-08-29）；MCP 型源健康检查走新增 `_mcp_probe` 通道，无凭据时探针按设计 SKIPPED。
