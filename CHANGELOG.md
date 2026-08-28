@@ -37,6 +37,7 @@
 ### Known Issues / Deferred
 - **validate_param_card R1 `str(None)` 恒真怪癖**：空字段经 `str(None)` 后存在性校验恒过的怪癖——本版本语义保持不变，待后续单列处理。
 - **AGENTKEY_API_KEY 未接入 CI secrets**：CI 环境无凭据时 AgentKey 探针按设计 SKIPPED，不阻塞门禁。后续接入需同时配置 secret 与 source-health.yml 的对应 env 行（本次已补）。
+- **P2-8 · 脚本合并记为技术债务**：脚本合并（`readme_drift_check.py` 与 `source_health.py` 统一同步态入口）经评估决定不在 v2.8.0 执行，记为技术债务，待 P1-1/P1-3 稳定一个版本周期后再评估。
 
 ### Tests
 - 测试套件 21 → 80 用例（pytest 80/80 PASS）；README 漂移门禁 R1–R7 PASS。
