@@ -2,7 +2,7 @@
 name: deep-market-research
 slug: deep-market-research
 displayName: Deep Market Research
-version: "2.7.1"
+version: "2.8.0"
 summary: 深度市场 / 竞品 / 技术趋势调研工作流，输出稳定、可复现、带引用溯源的研究报告。
 description: |
   深度市场 / 竞品 / 技术趋势调研工作流，输出稳定、可复现、带引用溯源的研究报告。
@@ -23,14 +23,14 @@ compatibility: >
   degrade gracefully when absent. See references/cross-platform-tools.md for per-platform setup.
   HONESTY RULE: only list skills/connectors actually available in the environment.
 metadata:
-  version: "2.7.1"
+  version: "2.8.0"
   author: "Rain / WorkBuddy"
   adapted_from: "sota-research + RSSnewsnowTrendRadar + 行业趋势深度调研 + 公司竞品深度调研 + market-researcher + material-organizer + llm-wiki + NATO Admiralty + Cat-Research。详见 references/optional-modules.md。"
 ---
 
 # Deep Market Research Workflow -- 深度市场调研工作流
 
-> 版本: 2.7.1 | 许可证: MIT
+> 版本: 2.8.0 | 许可证: MIT
 > 设计目标：**输出质量稳定、可复现、去重去旧去假去矛盾、并吸收真实用户热评**。
 
 ---
@@ -104,7 +104,10 @@ metadata:
 |           第二段产业链解剖(上下游利润分配/玩家格局/卡脖子) |
 |           第三段趋势预测与避坑(红利/颠覆技术/失败案例/反向)|
 |  搜索入口(基座并行): 内置 WebSearch/WebFetch 始终调用 + 若已配置 |
-|    Tavily/Perplexity/AgentKey 并行增强(无 key 跳过)       |
+|    Tavily/Perplexity/AgentKey 并行增强(无 key 跳过)；     |
+|    优先级与去重: 内置搜索 > 直连工具 > 聚合器--聚合器     |
+|    (如 AgentKey) 仅在对应直连工具不可用、或用户显式开启时 |
+|    使用；同一路由内不重复调用功能等价的工具               |
 |  专业数据库: 通达信(A股F10) 智慧芽(专利) 自选股/westock(财报) |
 |             威科/元典/北大法宝(法律) 天眼查/企查查/启信慧眼(工商)|
 |             GitHub(gh CLI+web,Trending) ima(知识库)/notion              |
@@ -149,7 +152,11 @@ metadata:
 |  排序准则: 语义相关度 x 时效 x 源层级 三轴混合--          |
 |        先按与查询意图的相关度粗排,再按时效与源层级精排      |
 |  信号门: 超新鲜窗口(默认>7天且非evergreen)丢弃；          |
-|          低信号(<阈值)噪声项降级或剔除                     |
+|          低信号(<阈值)噪声项降级或剔除。                  |
+|          适用范围: 仅限热榜/情绪/舆情类快衰减信号流；      |
+|          市场数据/行业报告/统计类源不适用此门, 按上方     |
+|          去旧规则(近 3-6 月)、质量规则 5 与时效 critic    |
+|          的时效口径处理                                   |
 |  假源过滤: 清 SEO 站/内容农场/机器 spun 文(低信号高广告)   |
 |  URL 验活: 输出前批量验证引用链接可访问，死链/失效源剔除   |
 +----------------------------------------------------------+
@@ -224,7 +231,7 @@ metadata:
 
 **1 研究参数卡（跨阶段共享上下文）**：从 Step 0 起维护一张结构化参数卡，每次阶段切换时**整卡传递**给下一阶段，避免跨阶段信息丢失。
 
-> **字段定义以 `references/parameter-card-schema.md` 为唯一权威**（调研分析专家团队《研究参数卡》、research-orchestrator `run-manifest.json` 参数卡快照 均引用此 schema，杜绝三重字段定义漂移）。必含字段：`课题` / `范围` / `实体清单` / **`已收集来源池`**（强制，跨阶段复用唯一证据入口）；推荐：`决策用途` / `模板` / `状态` / `语言` / `查询类型` / **`验收标准`**（可验证目标清单，每条含度量锚点）。可用 `python scripts/validate_param_card.py <卡片.yaml>` 在 Phase 0/1 入口做前置机检（零依赖、离线安全）。
+> **字段定义以 `references/parameter-card-schema.md` 为唯一权威**（调研分析专家团队《研究参数卡》、research-orchestrator `run-manifest.json` 参数卡快照 均引用此 schema，杜绝三重字段定义漂移）。必含字段：`课题` / `范围` / `实体清单` / **`已收集来源池`**（强制，跨阶段复用唯一证据入口）；推荐：`决策用途` / `模板` / `状态` / `语言` / `查询类型` / **`验收标准`**（可验证目标清单，每条含度量锚点）。可用 `python scripts/validate_param_card.py <卡片.yaml>` 在深度研究启动前（Step 0 / Phase 1 入口）做前置机检（零依赖、离线安全）。
 
 > **验收先行与终止条件（plan-first）**：Step 0 收敛范围时同步产出「验收标准（可验证目标，每条含度量锚点）」，随参数卡整卡传递，终稿对抗审计与 lint 自检逐条对照。终止条件三态枚举（**内嵌语义，不新增循环**）：**达标即停**（验收标准全过即收敛，禁止画蛇添足）/ **预算耗尽即停**（触发预算上限即按降级路径交付骨架＋披露）/ **最多 N 轮即停**（复用既有「最多 3 轮，第 3 轮强制通过并附遗留改进建议」语义，不另设循环）。
 
@@ -245,7 +252,7 @@ metadata:
 
 > 以下为 Step 7->8 终稿阶段的质量纪律，**不新增工具、不新增数值门槛、不阻断 Step 0->8 主管线**。
 
-- **0 可选：程序化机检门禁（validate_report.py）**：交付前可运行 `python scripts/validate_report.py <报告.md> [--template A|B|C|D|E] [--strict] [--json]` 对下方第 5 项 6 条 lint 做机检，输出 PASS/FAIL + 覆盖率，退出码 0/1 供 CI 或 Phase N 拦截。**零依赖（仅标准库）、离线安全（死链检查默认关闭）**，脚本缺失或环境无 Python 则跳过、绝不阻断 Step 0->8 主管线。机检为启发式前置门禁，不替代人工对抗审计。
+- **0 可选：程序化机检门禁（validate_report.py）**：交付前可运行 `python scripts/validate_report.py <报告.md> [--template A|B|C|D|E] [--strict] [--json]` 对下方第 5 项 6 条 lint 做机检，输出 PASS/FAIL + 覆盖率，退出码 0/1 供 CI 或后续校验环节拦截。**零依赖（仅标准库）、离线安全（死链检查默认关闭）**，脚本缺失或环境无 Python 则跳过、绝不阻断 Step 0->8 主管线。机检为启发式前置门禁，不替代人工对抗审计。
 
 - **1 对抗式审计（adversarial audit）**：终稿交付前，必须独立跑一轮「对抗式审计」--以一个 corpus critic 通读全篇找自相矛盾/无源结论，并至少并行 2 类 critic 角色挑战：
   - *事实一致性 critic*：每条结论是否都有对应 (源, 层级, 日期) 支撑？
@@ -374,7 +381,7 @@ metadata:
 | `references/faq.md` | 常见问题（8 问） |
 | `references/example.md` | 端到端完整示例（工业机器人赛道调研） |
 | `references/parameter-card-schema.md` | 研究参数卡结构化 schema 唯一权威（含 `验收标准` 推荐字段） |
-| `CHANGELOG.md` | 完整更新史（v2.0.0 -> v2.7.1） |
+| `CHANGELOG.md` | 完整更新史（v2.0.0 -> v2.8.0） |
 | `benchmarks/industrial-vision-baseline.md` | 5 题固定基准集（工业视觉域）+ Q6 销售路由回归题 + 季度分数演化记录 |
 | `sources.registry.yaml` | 信源注册表（default / optional / deprecated 三层） |
 | `scripts/source_health.py` | 信源健康监控 + 静态 PR 一致性门禁 |

@@ -1,5 +1,45 @@
 ﻿# Changelog
 
+## [2.8.0] - 2026-08-29
+
+审计修复发布（四批次审计发现共 21 项（H1-H6 / M1-M8 / L1-L7）逐项修复 + AgentKey 源注册与 R2 断言级校验）；测试套件由 21 扩至 80 用例。
+
+### Fixed
+- **H1 · 自包含宣称修正**：frontmatter / 正文的「自包含 / 零依赖」表述改为「默认零依赖、可选后端优雅降级」，与实际降级行为对齐。
+- **H2 · 安装清单补齐**：install.sh / install.ps1 分发清单补 `CHANGELOG.md` 与 `sources.registry.yaml`——此前安装器漏发运行时引用与信源注册表两文件。
+- **H3 · 信号门限定**：信号门明确限定仅适用于热榜 / 情绪类信号流，不再泛化覆盖新闻 / 报告类流。
+- **H4 · 基准评分口径声明**（benchmarks）：明确五维评分为本基准文档自定义口径，删除错误的「权重见 SKILL.md Step 7」引用，并与 Step 7 竞品评分卡、管线内部质量环（ratchet）口径划清边界。
+- **H5 · 示例 Step 映射对齐**：references/example.md 端到端示例的 Step 映射与 SKILL.md Step 0->8 管线重新对齐。
+- **H6 · 校验器补测试**：`validate_param_card.py` 与 `readme_drift_check.py` 补测试（新增 tests/test_validate_param_card.py、tests/test_readme_drift_check.py）。
+- **M1 · 孤儿术语清理**：正文残留的无对应实体孤儿术语清除。
+- **M2/T-07 · KNOWN_SOURCES 启发式 WARN**：source_health.py 的 KNOWN_SOURCES 匹配命中改为启发式 WARN，避免静默放行真实漂移。
+- **M3 · twitter_x 探针修正**：探针改为 `api.x.com` 端点 + Bearer 头，对齐 X API v2 规范。
+- **M4 · R1 判定去重**：validate_report.py R1 证据行判定复用已解析的 `_source_id`，消除重复解析。
+- **M5 · 运行时声明**：明确 Python 3.10+ 要求与跨平台文件权限约定。
+- **M6 · 安装目标对等**：install.sh / install.ps1 目标目录对齐（含补 `.trae-cn`）。
+- **M7 · 用例数勘误（Amended 形式）**：v2.7.0 条目用例数表述失准处已以 Amended 勘误（test_validate_report.py 实测 13 用例，21 为两文件总数），语义同「勘误不打新 tag」。
+- **M8 · 版本标记去硬编码**：脚本 / 文档中钉死的版本号改为参数化或动态读取，防版本漂移再发。
+- **L1-L7 · 细节修正**：模板确认度列削减、词表标签修正、中英双语文案对齐、CI 补 Windows 矩阵、校验器异常处理补强。
+
+### Added
+- **T-03 · AgentKey 源注册**：sources.registry.yaml optional 层注册 AgentKey（实测 2026-08-29）；MCP 型源健康检查走新增 `_mcp_probe` 通道，无凭据时探针按设计 SKIPPED。
+- **T-05 · R2 断言级校验**：validate_report.py R2 由引用统计升级为断言级校验——无支撑断言占比 >20% 直接判 FAIL。
+- **T-08 · 聚合器路由去重规则**：聚合器路由新增去重规则，同义源多路径不再重复注册。
+- **T-09 · Reins 评估记录（观察项）**：记录 Reins 评估结论，列为观察项暂不升级层级。
+
+### Added (终审自查披露层闭环 · 4 项)
+- **L5 人工跟进标注**：source_health.py 默认层 DEAD 时 `open_issue+mark_uncovered` 仅为维护者人工跟进标签（无自动开 issue 动作），已在注释层显式标注。
+- **P2-7 AgentEarth 观察记录落地**：cross-platform-tools.md 补 AgentEarth（agentearth.ai）2026-08-29 实测条目，结论暂不收编、列为观察项。
+- **P2-5 Real Browser MCP 补全**：既有 Reins 评估记录追加 Real Browser MCP 对比，同列观察项。
+- **披露口径勘误**：本条目用例数按 `pytest --collect-only` 实测修正为 21 → 80；「审计修复 19 项」按发现编号口径（6+8+7）统一为 21 项。
+
+### Known Issues / Deferred
+- **validate_param_card R1 `str(None)` 恒真怪癖**：空字段经 `str(None)` 后存在性校验恒过的怪癖——本版本语义保持不变，待后续单列处理。
+- **AGENTKEY_API_KEY 未接入 CI secrets**：CI 环境无凭据时 AgentKey 探针按设计 SKIPPED，不阻塞门禁。后续接入需同时配置 secret 与 source-health.yml 的对应 env 行（本次已补）。
+
+### Tests
+- 测试套件 21 → 80 用例（pytest 80/80 PASS）；README 漂移门禁 R1–R7 PASS。
+
 ## [2.7.1] - 2026-08-22
 
 热修复（installer-only，内核零变化）：install.sh 由 base64 blob 重写为可运行纯 bash，与 install.ps1 对齐。
@@ -32,6 +72,9 @@ P1 瘦身（基准首跑建基线后执行，内核零变化）：模式选择�
 
 ### Removed
 - 考古句清理：SKILL.md frontmatter「v2.2.1 已永久删除 6 个冗余 absorbed skill」；references/ 四处「本文件从 SKILL.md v2.3.2 提取」；SKILL.md 与 references/ 正文散布的（v2.4.0）（v2.6.0）版本标记——版本叙事只留在 CHANGELOG，正文只描述当前能力。
+
+### Amended (2026-08-29 · 用例数勘误，docs-only，不打新 tag)
+- **用例数勘误（审计 M7）**：上方 Fixed 条目「新增 `tests/test_validate_report.py`（21 用例）」表述失准——该文件实测 13 个用例；21 为两文件总数（`test_validate_report.py` 13 + `test_source_health.py` 8，与「验证结果：pytest 21/21」一致）。
 
 ## [2.6.1] - 2026-08-22
 

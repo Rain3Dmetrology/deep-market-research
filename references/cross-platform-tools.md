@@ -1,4 +1,4 @@
-# 跨平台可选工具接入指南（deep-market-research v2.3.1）
+# 跨平台可选工具接入指南（随仓库版本演进，以 CHANGELOG 为准）
 
 > 本文件是 `SKILL.md` 的**可选补充**。核心调研流程（Step 0–8 + 三-B 深度研究闭环）**零依赖、零安装**即可运行，只用 LLM 内置 `web_search` / `web_fetch` + 🆓 免费 REST API。
 > 本文档仅说明：如何为**有需要的用户**在各自平台上接入**可选增强工具**以丰富素材来源。
@@ -111,6 +111,17 @@
 
 **注意**：抖音/公众号 agent-reach **无独立频道**（可选频道仅 twitter/reddit/facebook/instagram/小红书/小宇宙/雪球/LinkedIn/bilibili），其内容由 exa/tavily/firecrawl 通用检索覆盖，不构成硬缺口。
 
+**同类方案评估记录 · karnstack/reins（2026-08-29 核验）**：
+- 基本情况：MIT 许可；npm 包 `@karnstack/reins`（latest 0.4.0，维护者 karngyan，首发 2026-07-04）；支持 Chrome/Brave/Edge/Arc/Dia；README 明示 127.0.0.1-only 绑定 + 逐站点权限 + 威胁模型文档（"Host 头校验防 DNS rebinding"与"仅接受 chrome-extension:// 来源"两项机制未见于 README，标注为文档声称、未核验）。
+- 与 OpenCLI 桥对比：同为「本地守护进程 + 浏览器扩展」复用登录态的浏览器桥；Reins 浏览器覆盖面更广（含 Arc/Dia）且安全模型文档化更完整；OpenCLI 桥已在本环境实测跑通 6 社媒频道（2026-07-23，见上文），是当前 agent-reach 社媒层的工作路径。
+- 结论：**列为观察项，不进默认安装脚本，不预设替换**。现桥正常工作则无迁移动作；仅在需扩展 Arc/Dia 等浏览器或强化安全模型时再评估试点（试点亦不写入默认安装，守护零安装定位）。
+- 同类观察项补充 · **Real Browser MCP**（2026-08-29 核验）：`github.com/ofershap/real-browser-mcp`——MIT 许可；本地 MCP 服务 + Chrome MV3 扩展 + localhost WebSocket 桥，18 工具；定位为**复用已登录 Chrome** 的浏览器自动化。与 Reins 同属「本地进程 + 浏览器扩展」桥型，与既有 OpenCLI 桥能力重叠 → **同列观察项，不进默认安装**。
+
+**同类方案评估记录 · AgentEarth（2026-08-29 实测）**：
+- 基本情况：agentearth.ai——1519 工具（金融类 524）；**X-Api-Key REST 聚合协议（非 MCP）**；积分制计费（1 USD = 1000 Credits）；页头 BETA 角标；无运营主体署名（RDAP：GoDaddy 2025-10-23 注册，Domains By Proxy 隐私保护）。
+- 风险信号：外部宣传的 `pip install agentearth-sdk` 在 PyPI 404（外部宣传存疑）。
+- 结论：**暂不收编、列为观察项**——主体匿名 + 计费不透明 + 宣传与实测不符，不满足可选源准入；仅保留本记录供季度复核。
+
 ### 2.x 公众号全文提取（ReadGZH-Agent · 可选 MCP）
 
 > 定位：dmr 已引用 `wechat-article-search` skill 做**公众号文章搜索**（返回标题/摘要/时间/账号/链接，**不含全文**）。本工具补齐**全文提取**缺口，二者互补、不重叠。缺失则回退 `web_search`。
@@ -173,6 +184,32 @@
 }
 ```
 > Cookie / key 仅本地；缺失任一工具 → 回退 `web_search`，不中断主管线。
+
+### 2.z AgentKey（闭源商业 SaaS · 仅 MCP 接入 · 可选兜底）
+
+> 定位：工具聚合平台（find_tools → describe_tool → execute_tool 三段式），约 2000 工具（官方口径 "2,000+"，**2026-08-29 凭据直测实测 1981**，11 个顶层节点）：社交 1213（25 个子平台）/ 金融 311 / 链上 179。上游转发已实测点名 search = brave/exa/parallel/perplexity/serper/tavily、scrape = brightdata/firecrawl/jina。
+
+**事实卡（按 2026-08-29 官方凭据直测修正，非第三方转述）**：
+- 出品：Chainbase（terms 条款 Contact 款：Chainbase Technology Holdings Pte. Ltd.，新加坡主体）；与阿里云百炼的业务空间标识“AgentKey”同名无关。
+- 性质：**闭源商业 SaaS**——无 MIT 许可、无公开版本号（早期引用材料中的 “MIT / v1.14.0” 已经直测证伪剔除）。
+- 计费：订阅外壳 + 积分按量混合——免费档赠 10 积分；Lite/Pro/Max 月订阅含月度积分、可加购、不滚存。免费额度有限（实测 key 已耗 65%、余 3.5 积分），实际数据调用需付费档。
+- 接入：**仅 MCP**（Streamable HTTP，JSON-RPC 2.0 标准 initialize/tools/list 握手，返回 `mcp-session-id` 会话头）；无 REST/文档面，常规探测路径全部 404。
+- 时效限定（截至 2026-08-29 实测）：社交类目中 linkedin/threads 官方健康探测自报不健康，引用需加时效限定；`list_tools` 已标注废弃。
+- 健康监控：`sources.registry.yaml` 已登记（optional 层，`probe_type: mcp`），探活走最小 `initialize` 握手（不消耗积分）；无凭据时 SKIPPED。
+
+**路由去重纪律**：搜索/抓取意图**优先直连**已配置工具（exa/tavily/firecrawl 等），AgentKey 仅作未配置直连时的兜底或社媒类目命中时触发；默认关闭、显式开启。防止同一上游经 AgentKey 转发重复调用与订阅开销（其上游即上述已有工具）。
+
+**配置**（`$AGENTKEY_API_KEY` 仅本地环境变量提供，绝不写入仓库）：
+```json
+{
+  "mcpServers": {
+    "agentkey": {
+      "url": "https://api.agentkey.app/v1/mcp",
+      "headers": { "Authorization": "Bearer ${AGENTKEY_API_KEY}" }
+    }
+  }
+}
+```
 
 
 ### 2.2 Claude（Claude CLI / Desktop）

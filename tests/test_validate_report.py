@@ -18,6 +18,7 @@ Guards the Q2/Q5 benchmark fixes:
 
 Run:  pytest tests/test_validate_report.py
 """
+import io
 import os
 import sys
 
@@ -228,3 +229,179 @@ def test_non_e_auto_report_with_conflict_requires_ledger():
     sections = v.split_sections(text)
     missing, _ = v.required_sections_check(sections, "auto")
     assert "contradiction" in missing
+
+
+# --- M4 fix: R1 identifiable-source reuses _source_id ------------------------
+# 守护场景：审计 M4 —— 旧分支 `(len>=2 and not RE_TIER.match)` 会被日期单元格本身满足，
+# R1 实际只检查了日期（空操作）；修复后「可识别来源」= URL>DOI>裸域名 严格判定。
+
+def test_r1_date_cell_no_longer_counts_as_source():
+    text = "\n".join([
+        "| 指标 | 层级 | 日期 | 数值 |",
+        "|----|------|------|------|",
+        "| 毛利率 83.0% | T1 | 2026-08-01 | v2.6.1 |",
+    ])
+    status, detail, total = v.check_rule1_evidence(text)
+    assert status == "FAIL", detail  # 修复前该表会误判 PASS（日期格即满足旧分支）
+    assert total == 1
+
+
+def test_r1_row_with_url_source_passes():
+    text = "\n".join([
+        "| 源 | 层级 | 日期 | 用途 |",
+        "|----|------|------|------|",
+        "| https://a.example/x | T1 | 2026-08-01 | 事实 |",
+    ])
+    status, detail, total = v.check_rule1_evidence(text)
+    assert status == "PASS", detail
+    assert total == 1
+
+
+def test_r1_bare_domain_source_passes():
+    # 裸域名（无 scheme）仍是可识别来源（与 R2 同一 _source_id 语义）
+    text = "\n".join([
+        "| 源 | 层级 | 日期 | 用途 |",
+        "|----|------|------|------|",
+        "| keyence.com.cn 产品页 | T1 | 2026-08-01 | 定价制 |",
+    ])
+    status, detail, _ = v.check_rule1_evidence(text)
+    assert status == "PASS", detail
+
+
+# --- T-05 fix: R2 assertion-level backing ------------------------------------
+# 守护场景：审计 T-05 —— 文档级启发式下「30 条 Confirmed 中 29 条无支撑仍可 PASS」；
+# 修复后逐断言求局部窗口（同章节或 ±v.R2_BACKING_WINDOW 行）支撑，
+# 大量无支撑判 FAIL；无支撑占比 <= v.R2_UNBACKED_WARN_RATIO 仅 WARN；
+# 无标签的 Confirmed 字样保留文档级容差。
+
+def test_r2_many_unbacked_confirmed_fails():
+    head = ["## 1. 执行摘要"] + ["- 结论 %d [Confirmed]。" % i for i in range(10)]
+    pad = ["## 2. 方法论与合规声明"] + ["- 填充行。" for _ in range(12)]
+    tail = [
+        "## 3. 信源分级一览",
+        "| 源 | 层级 | 日期 | 用途 |",
+        "|----|------|------|------|",
+        "| https://a.example/x | T1 | 2026-08-01 | 事实A |",
+        "| https://b.example/y | T2 | 2026-08-02 | 事实B |",
+    ]
+    # 10/10 断言均超出局部窗口 -> 旧版文档级启发式会 PASS，修复后必须 FAIL
+    status, detail = v.check_rule2_confirmed("\n".join(head + pad + tail))
+    assert status == "FAIL", detail
+
+
+def test_r2_single_unbacked_confirmed_fails():
+    text = "\n".join([
+        "## 1. 执行摘要",
+        "- 结论 A [Confirmed]。",
+    ])
+    status, _ = v.check_rule2_confirmed(text)
+    assert status == "FAIL"  # 1/1 无支撑，超过容差阈值，不放行
+
+
+def test_r2_inline_citations_back_their_own_assertion():
+    text = "\n".join([
+        "## 1. 执行摘要",
+        "- 结论 A [Confirmed]，源A(T1, 2026-08-01) 与 源B(T2, 2026-08-02)。",
+    ])
+    status, detail = v.check_rule2_confirmed(text)
+    assert status == "PASS", detail
+
+
+def test_r2_nearby_evidence_table_backs_assertion():
+    # Q6 基准报告形态：结论行紧邻证据表（±窗口内）仍计支撑，不误伤既有排版。
+    # 守护场景：与 test_table_rows_back_confirmed 同一来源，升级为断言级后保留该容差。
+    text = "\n".join([
+        "## 1. 执行摘要",
+        "结论 A [Confirmed]。",
+        "## 2. 信源分级一览",
+        "| 源 | 层级 | 日期 | 用途 |",
+        "|----|------|------|------|",
+        "| https://a.example/x | T1 | 2026-08-01 | 事实A |",
+        "| https://b.example/y | T3 | 2026-08-02 | 事实B |",
+    ])
+    status, detail = v.check_rule2_confirmed(text)
+    assert status == "PASS", detail
+
+
+def test_r2_unbacked_minority_warns_not_fails():
+    # 容差（由本测试守护）：无支撑断言占比 <= R2_UNBACKED_WARN_RATIO 时仅 WARN，
+    # 避免个别排版变体直接误报 FAIL。
+    lines = ["## 1. 执行摘要"]
+    for i in range(4):
+        lines.append("- 结论 %d [Confirmed]，源A%d(T1, 2026-08-01) 与 源B%d(T2, 2026-08-02)。" % (i, i, i))
+    lines += ["## 2. 开放问题"] + ["- 填充行。" for _ in range(8)]
+    lines.append("- 结论 X [Confirmed] 待核。")
+    status, detail = v.check_rule2_confirmed("\n".join(lines))
+    assert status == "WARN", detail  # 1/5 = 20% <= 阈值 -> WARN 而非 FAIL
+
+
+def test_tagless_confirmed_mention_keeps_doc_level_tolerance():
+    # 向后兼容容差（由本测试守护）：无 [Confirmed] 标签的 Confirmed 字样（散文/历史形态）
+    # 保留文档级启发式，不对既有报告降档误报。
+    text = "\n".join([
+        "## 1. 执行摘要",
+        "- 本期整体置信度为 Confirmed。",
+        "## 2. 信源分级一览",
+        "| 源 | 层级 | 日期 | 用途 |",
+        "|----|------|------|------|",
+        "| https://a.example/x | T1 | 2026-08-01 | 事实A |",
+        "| https://b.example/y | T2 | 2026-08-02 | 事实B |",
+    ])
+    status, detail = v.check_rule2_confirmed(text)
+    assert status == "PASS", detail
+
+
+def test_confirmed_backing_pct_is_assertion_level():
+    # 覆盖率指标与 R2 断言级校验一致（审计 T-05：confirmed_backing_pct 名副其实）。
+    lines = ["- 结论 A [Confirmed]，源A(T1, 2026-08-01) 与 源B(T2, 2026-08-02)。"]
+    lines += ["- 填充行。" for _ in range(10)]
+    lines += ["- 结论 B [Confirmed]。"]
+    assert v._confirmed_backing("\n".join(lines)) == 50.0
+
+
+# --- Windows GBK 控制台回归 -------------------------------------------------
+# 守护场景：人类可读输出含 ✔(U+2714) 等非 GBK 字符，Windows 默认 GBK 控制台裸跑时
+# print 抛 UnicodeEncodeError、进程以退出码 1 崩溃；main() 入口的 _configure_stdio()
+# （同 setup_mcp.py 语义）修复后不得再抛。
+
+LEGAL_REPORT_MD = "\n".join([
+    "## 1. 执行摘要",
+    "- 结论 A [Confirmed]，源A(T1, 2026-08-01) 与 源B(T2, 2026-08-02)。",
+    "## 2. 信源分级一览",
+    "| 源 | 层级 | 日期 | 用途 |",
+    "|----|------|------|------|",
+    "| https://a.example/x | T1 | 2026-08-01 | 事实A |",
+    "| https://b.example/y | T2 | 2026-08-02 | 事实B |",
+    "## 3. 开放问题",
+    "- 环境受限：未覆盖线下渠道数据。",
+    "## 4. 方法论与合规声明",
+    "- 启发式机检，非语义证明。",
+])
+
+
+def test_gbk_limited_stdout_does_not_crash_human_render(tmp_path, monkeypatch):
+    rpt = tmp_path / "report.md"
+    rpt.write_text(LEGAL_REPORT_MD, encoding="utf-8")
+    gbk_out = io.TextIOWrapper(io.BytesIO(), encoding="gbk", errors="strict")
+    monkeypatch.setattr(sys, "stdout", gbk_out)
+    rc = v.main([str(rpt)])  # 修复前：print 渲染 ✔ 抛 UnicodeEncodeError（pytest 视为失败）
+    assert rc == 0
+    gbk_out.flush()  # TextIOWrapper 缓冲须显式冲刷才落入底层 BytesIO
+    rendered = gbk_out.buffer.getvalue().decode("utf-8", errors="replace")
+    assert "总判定: PASS" in rendered
+
+
+def test_json_output_is_ascii_safe(tmp_path, monkeypatch):
+    # --json 路径保证机器可读：即使 stdout 为 GBK strict 流也不抛、输出纯 ASCII 可解析。
+    import json as _json
+    rpt = tmp_path / "report.md"
+    rpt.write_text(LEGAL_REPORT_MD, encoding="utf-8")
+    gbk_out = io.TextIOWrapper(io.BytesIO(), encoding="gbk", errors="strict")
+    monkeypatch.setattr(sys, "stdout", gbk_out)
+    rc = v.main([str(rpt), "--json"])
+    assert rc == 0
+    gbk_out.flush()  # TextIOWrapper 缓冲须显式冲刷才落入底层 BytesIO
+    raw = gbk_out.buffer.getvalue()
+    assert raw.isascii()
+    assert _json.loads(raw.decode("ascii"))["overall"] == "PASS"
+

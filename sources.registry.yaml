@@ -69,9 +69,16 @@ hn:
 
 twitter_x:
   name: Twitter/X
-  url: https://api.twitter.com/2/tweets/search/recent?query=electron&max_results=10&bearer_token=$TWITTER_BEARER_TOKEN
+  url: https://api.x.com/2/tweets/search/recent?query=electron&max_results=10
   layer: optional
   needs_key: true
+  probe_type: custom
+  auth: 'Authorization: Bearer $TWITTER_BEARER_TOKEN（请求头认证）'
+  note: >-
+    M3 修正（v2.8）：X API v2 域名已迁 api.x.com（api.twitter.com 旧域）；认证为请求头
+    Bearer，凭据不再拼入 query。现有 _http_probe 仅支持 URL 探针、无法表达头部认证，
+    故按自定义探针（probe_type: custom）标注：有凭据时输出 SKIPPED 而非伪造一个可通过的
+    探针，待后续探针机制支持头部认证后再启用。
 
 firecrawl:
   name: Firecrawl
@@ -115,6 +122,26 @@ fred:
   layer: optional
   needs_key: true
   note: '宏观维度不进 dimensions_uncovered；死亡仅 backoff+log；宏观已由 WebSearch 无 key 覆盖'
+
+# --- AgentKey（v2.8 / 审计 T-03：仅 MCP 接入，需 MCP 型健康检查分支）--------
+agentkey:
+  name: AgentKey
+  url: https://api.agentkey.app/v1/mcp
+  layer: optional
+  needs_key: true
+  probe_type: mcp
+  auth_env: AGENTKEY_API_KEY
+  auth: 'Bearer（Authorization 请求头）: $AGENTKEY_API_KEY'
+  note: >-
+    闭源商业 SaaS（Chainbase / Chainbase Technology Holdings Pte. Ltd. 运营；无 MIT 许可、
+    无公开版本号——审计对方引用的“MIT 许可 / 1.14.0 版本号”已经直测证伪剔除）。工具总数约 2000（官方口径 "2,000+"，
+    2026-08-29 凭据直测实测 1981，11 个顶层节点）：社交 1213（25 个子平台）/ 金融 311 / 链上 179。
+    计费为订阅外壳 + 积分按量混合：免费档赠 10 积分，Lite/Pro/Max 月订阅含月度积分、可加购、不滚存；
+    免费额度有限（实测 key 已耗 65%、余 3.5 积分），实际数据调用需付费档。仅 MCP 接入
+    （Streamable HTTP，JSON-RPC 2.0 initialize/tools 握手），无 REST/文档面。健康探测走
+    source_health._mcp_probe 最小 initialize 握手，不消耗积分；无凭据时 SKIPPED 不误判。
+    时效限定：社交类目中 linkedin/threads 官方健康探测自报不健康（截至 2026-08-29 实测）。
+    路由纪律：搜索/抓取意图优先直连，AgentKey 仅作未配置直连时的兜底或社媒类目命中时触发。
 
 # --- deprecated (probe skipped; must not be referenced as active route) -----
 midu_hotsearch:

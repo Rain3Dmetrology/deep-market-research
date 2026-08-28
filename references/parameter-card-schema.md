@@ -5,7 +5,7 @@
 > - 调研分析专家团队（`research-analytics-team-team-lead.md` 的《研究参数卡》）字段定义以本 schema 为准。
 > - research-orchestrator 的 `run-manifest.json`「参数卡快照」须与本 schema 同构。
 >
-> 目的：把跨阶段共享上下文从「自由散文」升级为**可机检的结构化卡片**，供 `scripts/validate_param_card.py` 在 Phase 0/1 入口做前置校验，杜绝缺字段、来源池缺项、层级/日期格式错误。
+> 目的：把跨阶段共享上下文从「自由散文」升级为**可机检的结构化卡片**，供 `scripts/validate_param_card.py` 在入口（Step 0 / Phase 1 启动前）做前置校验，杜绝缺字段、来源池缺项、层级/日期格式错误。
 >
 > **零依赖纪律**：卡片用受限 YAML 子集书写（见下方「格式规范」），`validate_param_card.py` 用**纯标准库正则解析**，不引入 pyyaml 等第三方包，守住 dmr 平台无关护城河。
 
@@ -48,7 +48,7 @@
 | `日期` | 采集/发布日期 | **格式 YYYY / YYYY-MM / YYYY-MM-DD** |
 | `置信` | 置信标签 | 推荐 ∈ {Confirmed,Corroborated,Single-source,Unverified}；非集合内值 → WARN |
 
-> 团队「来源池跨阶段复用」机制要求：Phase1 各成员优先消耗池中证据，新采集源必须回写此池（实体/源URL/层级/日期/置信），Phase2 裁决与 Phase N 汇编只从此池取数。
+> 「来源池跨阶段复用」机制要求：各阶段（Phase 1–5）优先消耗池中证据，新采集源必须回写此池（实体/源URL/层级/日期/置信），后续裁决与汇编环节只从此池取数。
 
 ---
 

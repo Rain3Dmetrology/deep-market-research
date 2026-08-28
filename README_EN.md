@@ -1,4 +1,4 @@
-# Deep Market Research — Deep Market Research Skill
+# Deep Market Research Skill
 
 > 🌐 Language / 语言：[🇨🇳 中文](README.md) · **[🇺🇸 English](README_EN.md)**
 >
@@ -58,6 +58,7 @@ Follows the [Agent Skills open standard](https://agentskills.io/) (initiated by 
 | **Claude Code / Claude** | `~/.claude/skills/` | auto-discover + `/deep-market-research` |
 | **OpenAI Codex** | `~/.codex/skills/` | auto-discover |
 | **TRAE** | `~/.trae/skills/` | auto-discover |
+| **TRAE CN** | `~/.trae-cn/skills/` | auto-discover |
 | **Qoder** | `~/.qoder/skills/` | auto-discover |
 | **WorkBuddy / CodeBuddy** | `~/.workbuddy/skills/` | auto-discover |
 
@@ -78,7 +79,7 @@ cd deep-market-research
 powershell -ExecutionPolicy Bypass -File install.ps1
 ```
 
-The script auto-detects existing directories among `~/.claude`, `~/.codex`, `~/.trae`, `~/.qoder`, `~/.workbuddy` and installs into them; uninstalled ones are skipped. **Restart the agent** after installation to load the skill.
+The script auto-detects existing directories among `~/.claude`, `~/.codex`, `~/.trae`, `~/.trae-cn`, `~/.qoder`, `~/.workbuddy` and installs into them; uninstalled ones are skipped. **Restart the agent** after installation to load the skill.
 
 > **Manual install**: copy the entire `deep-market-research/` folder into the target platform's `skills/` directory.
 
@@ -89,7 +90,7 @@ The script auto-detects existing directories among `~/.claude`, `~/.codex`, `~/.
 Just tell the agent (auto-matched to `SKILL.md`'s `description` trigger):
 
 - "Research the competitive landscape of industrial AI 3D vision metrology"
-- "Competitive analysis: Hikrobot vs DEEPVISION vs Techman Robot"
+- "Competitive analysis: Hikrobot vs DEEPVISION vs TZTEK"
 - "Industry trend: investment opportunities in China's machine-vision supply chain"
 - "Dig into Keyence China's background"
 
@@ -115,7 +116,7 @@ deep-market-research/
 └── .gitignore
 ```
 
-> The skill's core is **self-contained**: all workflows, templates, and rules are embedded in `SKILL.md`; no extra scripts or config files are needed. `references/` is only an optional enhancement-tool guide; its absence does not affect the main flow.
+> The skill's core is **self-contained**: the core methodology, workflow, and quality rules are embedded in `SKILL.md`; the five output templates (A–E) live externally in [references/templates.md](references/templates.md); `scripts/` provides optional runtime validation hooks whose absence never blocks the main pipeline.
 
 ---
 
@@ -131,7 +132,7 @@ The skill itself works using the agent's built-in web tools (WebSearch / WebFetc
 
 - **FAQ (8 questions)**: see [references/faq.md](references/faq.md)
 - **End-to-end example**: see [references/example.md](references/example.md) (industrial-robotics track research)
-- **Full changelog**: v2.0.0 → v2.7.1 — see [CHANGELOG.md](CHANGELOG.md) (v2.7.1 = install.sh hotfix)
+- **Full changelog**: v2.0.0 → v2.8.0 — see [CHANGELOG.md](CHANGELOG.md) (v2.8.0 = audit-fix release)
 
 ---
 

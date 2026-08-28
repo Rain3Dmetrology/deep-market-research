@@ -41,6 +41,7 @@ jobs:
           ZHIHU_TOKEN: ${{ secrets.ZHIHU_TOKEN }}
           PATSNAP_TOKEN: ${{ secrets.PATSNAP_TOKEN }}
           CONNECTED_PAPERS_TOKEN: ${{ secrets.CONNECTED_PAPERS_TOKEN }}
+          AGENTKEY_API_KEY: ${{ secrets.AGENTKEY_API_KEY }}
 
       - name: Upload parity report
         if: always()

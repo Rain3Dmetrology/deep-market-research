@@ -29,6 +29,7 @@ import json
 import os
 import re
 import sys
+import urllib.error
 import urllib.parse
 import urllib.request
 
@@ -75,8 +76,21 @@ def load_key() -> str | None:
 
 def _get(url: str) -> dict:
     req = urllib.request.Request(url, headers={"User-Agent": "dmr-fred/1.0"})
-    with urllib.request.urlopen(req, timeout=30) as r:
-        return json.loads(r.read().decode("utf-8"))
+    try:
+        with urllib.request.urlopen(req, timeout=30) as r:
+            return json.loads(r.read().decode("utf-8"))
+    except urllib.error.HTTPError as e:
+        print(f"[!] FRED API 返回 HTTP {e.code}: {e.reason}（请检查 series ID 与 API key）", file=sys.stderr)
+        sys.exit(2)
+    except TimeoutError:
+        print("[!] FRED API 请求超时（30s），请稍后重试或检查网络", file=sys.stderr)
+        sys.exit(2)
+    except urllib.error.URLError as e:
+        print(f"[!] 无法连接 FRED API（{e.reason}），请检查网络或代理设置", file=sys.stderr)
+        sys.exit(2)
+    except json.JSONDecodeError:
+        print("[!] FRED API 返回了非 JSON 内容，无法解析", file=sys.stderr)
+        sys.exit(2)
 
 
 def main():

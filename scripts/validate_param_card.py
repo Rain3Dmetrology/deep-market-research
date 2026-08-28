@@ -297,7 +297,20 @@ def render_human(report: dict) -> str:
     return "\n".join(lines)
 
 
+def _configure_stdio() -> None:
+    """把 stdout/stderr 设为 UTF-8，避免 Windows 默认 GBK 控制台无法输出 ✔/✘/⚠ 等字符时
+    print 抛 UnicodeEncodeError、进程以退出码 1 崩溃（合法样例也拿不到 PASS 退出码）。
+    与 scripts/setup_mcp.py 入口适配同语义；按「脚本独立可运行」惯例各脚本自包含，
+    不提取共享模块。"""
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(encoding="utf-8", errors="replace")
+        except (AttributeError, OSError, ValueError):
+            pass
+
+
 def main(argv=None) -> int:
+    _configure_stdio()
     p = argparse.ArgumentParser(description="dmr 研究参数卡结构化机检（零依赖，离线安全）")
     p.add_argument("card", help="待检参数卡 yaml 路径")
     p.add_argument("--strict", action="store_true", help="WARN 也视为失败")
@@ -309,7 +322,9 @@ def main(argv=None) -> int:
         sys.stderr.write(render_human(report) + "\n")
         return 2
     if args.json:
-        print(json.dumps(report, ensure_ascii=False, indent=2))
+        # ensure_ascii=True：JSON（机器可读）路径输出纯 ASCII，即使 stdout 编码受限
+        # 也不受 errors="replace" 破坏；json.loads 对 \uXXXX 转义无损还原。
+        print(json.dumps(report, ensure_ascii=True, indent=2))
     else:
         print(render_human(report))
     return 0 if report["overall"] == "PASS" else 1

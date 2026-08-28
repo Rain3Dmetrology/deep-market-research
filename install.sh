@@ -7,7 +7,7 @@ SKILL_DIR="deep-market-research"
 SRC="$(cd "$(dirname "$0")" && pwd)"
 
 # 要复制的文件（排除 .git 与安装脚本自身；scripts/ 承载机检脚本，benchmarks/ 为基准包）
-FILES=(SKILL.md README.md README_EN.md references assets benchmarks scripts LICENSE CONTRIBUTING.md .gitignore)
+FILES=(SKILL.md README.md README_EN.md references assets benchmarks scripts LICENSE CONTRIBUTING.md CHANGELOG.md sources.registry.yaml .gitignore)
 
 # 各平台 skills 根目录（存在的才安装）
 TARGETS=(

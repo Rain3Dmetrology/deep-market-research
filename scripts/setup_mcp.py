@@ -18,13 +18,14 @@ setup_mcp.py — 生成本机 ~/.workbuddy/mcp.json (从 OneDrive 桌面 key 文
   python setup_mcp.py --out /path/to/mcp.json
   python setup_mcp.py --no-backup            # 不备份现有 mcp.json
 
-依赖：Python 3.8+，仅标准库。
+依赖：Python 3.10+（代码使用 `str | None` 等联合类型语法），仅标准库。
 """
 import json
 import os
 import re
 import sys
 import shutil
+import getpass
 import argparse
 import subprocess
 from datetime import datetime
@@ -60,8 +61,7 @@ PREFIX_RE = re.compile(
 
 # ⚠️ 所有 server 一律剥前缀（实测：带前缀 token 上游 API 全 401 拒，裸 token 才通）
 # 不再区分 env/header/url 类 —— 见设计原则 #2
-KEEP_PREFIX = set()  # 空集 = 全部剥前缀
-STRIP_PREFIX = {"exa", "firecrawl", "tavily", "huggingface", "modelscope", "zhihu", "readgzh"}
+KEEP_PREFIX = set()  # 空集 = 全部剥前缀（既然全剥，无需按名名单）
 
 
 def detect_desktop() -> str:
@@ -90,6 +90,29 @@ def read_text(path: str) -> str:
         except UnicodeDecodeError:
             continue
     return raw.decode("utf-8", errors="ignore")
+
+
+def _restrict_to_owner(path: str) -> None:
+    """将敏感文件（含密钥）权限收窄为仅当前用户可读（跨平台，纯标准库）。
+
+    - POSIX：`os.chmod 0o600` 直接限所有者读写。
+    - Windows：无 600 语义，依赖 NTFS ACL —— 用 `icacls` 移除继承后仅授予当前用户读权限；
+      若 icacls 不可用或执行失败，仅告警不阻断（文件仍受默认用户目录 ACL 保护）。
+    """
+    if os.name != "nt":
+        os.chmod(path, 0o600)
+        return
+    try:
+        subprocess.run(
+            ["icacls", path, "/inheritance:r", "/grant:r", f"{getpass.getuser()}:(R)"],
+            capture_output=True, text=True, shell=False, check=True,
+        )
+    except (OSError, subprocess.CalledProcessError) as e:
+        print(
+            f"[!] WARN: 无法通过 icacls 收窄 {path} 的 NTFS ACL（{e}）；"
+            f"请人工确认仅当前用户可读",
+            file=sys.stderr,
+        )
 
 
 def _warn_if_in_repo(path: str) -> None:
@@ -235,7 +258,17 @@ def build_servers(keys: dict) -> dict:
     return servers
 
 
+def _configure_stdio() -> None:
+    """把 stdout/stderr 设为 UTF-8，避免 Windows GBK 控制台无法输出 ✓/← 等字符时崩溃。"""
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(encoding="utf-8", errors="replace")
+        except (AttributeError, OSError, ValueError):
+            pass
+
+
 def main():
+    _configure_stdio()
     ap = argparse.ArgumentParser(description="生成 ~/.workbuddy/mcp.json (从桌面 key 文件)")
     ap.add_argument("--desktop", default=None, help="桌面 key 文件目录")
     ap.add_argument("--out", default=os.path.expanduser(r"~/.workbuddy/mcp.json"))
@@ -319,7 +352,7 @@ def main():
         os.makedirs(out_dir, exist_ok=True)
     with open(args.out, "w", encoding="utf-8") as f:
         json.dump(out_obj, f, indent=2, ensure_ascii=False)
-    os.chmod(args.out, 0o600)
+    _restrict_to_owner(args.out)
     _warn_if_in_repo(args.out)
     print(f"\n[✓] 已生成 {args.out}")
     print(f"    共 {len(merged)} 个 server（本次管理 {len(new_servers)}，保留 {len(preserved)}）")
@@ -339,7 +372,7 @@ def main():
         with open(env_path, "w", encoding="utf-8") as f:
             for k, v in non_mcp.items():
                 f.write(f"{k}={v}\n")
-        os.chmod(env_path, 0o600)
+        _restrict_to_owner(env_path)
         _warn_if_in_repo(env_path)
         print(f"[i] 已生成 {env_path}（本机专用，勿提交仓库）")
 

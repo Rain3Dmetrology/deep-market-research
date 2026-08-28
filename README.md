@@ -1,4 +1,4 @@
-# Deep Market Research — 深度市场调研 Skill
+# 深度市场调研 Skill（Deep Market Research）
 
 > 🌐 语言 / Language：**[🇨🇳 中文](README.md)** · [🇺🇸 English](README_EN.md)
 >
@@ -58,6 +58,7 @@
 | **Claude Code / Claude** | `~/.claude/skills/` | 自动发现 + `/deep-market-research` |
 | **OpenAI Codex** | `~/.codex/skills/` | 自动发现 |
 | **TRAE** | `~/.trae/skills/` | 自动发现 |
+| **TRAE CN** | `~/.trae-cn/skills/` | 自动发现 |
 | **Qoder** | `~/.qoder/skills/` | 自动发现 |
 | **WorkBuddy / CodeBuddy** | `~/.workbuddy/skills/` | 自动发现 |
 
@@ -78,7 +79,7 @@ cd deep-market-research
 powershell -ExecutionPolicy Bypass -File install.ps1
 ```
 
-脚本自动检测 `~/.claude`、`~/.codex`、`~/.trae`、`~/.qoder`、`~/.workbuddy` 中已存在的目录并安装，未安装的自动跳过。安装后**重启 Agent** 即可加载。
+脚本自动检测 `~/.claude`、`~/.codex`、`~/.trae`、`~/.trae-cn`、`~/.qoder`、`~/.workbuddy` 中已存在的目录并安装，未安装的自动跳过。安装后**重启 Agent** 即可加载。
 
 > **手动安装**：将整个 `deep-market-research/` 文件夹复制到目标平台的 `skills/` 目录。
 
@@ -115,7 +116,7 @@ deep-market-research/
 └── .gitignore
 ```
 
-> Skill 核心**自包含**：所有工作流、模板、规则都内嵌在 `SKILL.md` 中，无需额外脚本或配置文件；`references/` 仅是可选项增强工具接入指南，缺失不影响主流程。
+> Skill 核心**自包含**：核心方法论、流程与质量规则内嵌于 `SKILL.md`；5 套输出模板（A–E）外置于 [references/templates.md](references/templates.md)；`scripts/` 为可选运行时校验钩子，缺失不阻断主管线。
 
 ---
 
@@ -131,7 +132,7 @@ Skill 本身调用 Agent 内置联网工具（WebSearch / WebFetch）即可工�
 
 - **FAQ（8 问）**：见 [references/faq.md](references/faq.md)
 - **端到端示例**：见 [references/example.md](references/example.md)（工业机器人赛道调研）
-- **完整更新史**：v2.0.0 → v2.7.1 — 见 [CHANGELOG.md](CHANGELOG.md)（v2.7.1 为 install.sh 热修复）
+- **完整更新史**：v2.0.0 → v2.8.0 — 见 [CHANGELOG.md](CHANGELOG.md)（v2.8.0 为审计修复发布）
 
 ---
 

@@ -6,7 +6,7 @@ validate_report.py — deep-market-research (dmr) 程序化终稿机检门禁
 定位
 ----
 dmr SKILL.md「终稿纪律 · 5 输出前 lint 自检清单」的**可度量前置机检**。
-把原本人工勾选的 6 项（或团队 Phase N 的 ①来源充分性 维度）升级为 PASS/FAIL 门禁，
+把原本人工勾选的 6 项（或后续校验环节的 ①来源充分性 维度）升级为 PASS/FAIL 门禁，
 输出覆盖率，供单 agent 模式交付前或 CI 拦截使用。
 
 设计纪律（对齐 dmr 平台无关/零依赖护城河）
@@ -22,6 +22,12 @@ dmr SKILL.md「终稿纪律 · 5 输出前 lint 自检清单」的**可度量前
   对齐 §七 实体级证据缓存表形态；auto 模式检测到「本期变化总览」即按模板 E 角色集
   校验（模板 E 无独立矛盾台账章节，冲突由置信迁移/双方案并列承载）——
   机检不因 LLM 排版变体或模板形态误报 FAIL。
+- **v2.8 校验器加固（审计 M4 + T-05 合并修复）**：R1「可识别来源」复用 R2 的
+  `_source_id` 严格判定（URL>DOI>裸域名），杜绝旧分支「日期单元格本身即满足」
+  的空操作；R2/Confirmed 由文档级启发式升级为断言级校验——每个 [Confirmed]
+  标注断言须在局部窗口（同章节或 ±6 行）内有 >=2 个独立 T1-3 合格引用，
+  大量无支撑 Confirmed 判 FAIL；无标签的 Confirmed 字样保留文档级容差，
+  由测试守护（见 tests/test_validate_report.py）。
 
 用法
 ----
@@ -33,7 +39,7 @@ dmr SKILL.md「终稿纪律 · 5 输出前 lint 自检清单」的**可度量前
     1 = 未通过（至少一项 FAIL）
     2 = 用法 / 文件错误
 
-作者：dmr v2.4.x 单 agent 验证路径（A 项落地）。零团队耦合。
+作者：dmr v2.4.x 单 agent 验证路径（A 项落地）。不依赖任何团队协作协议。
 """
 
 import argparse
@@ -268,10 +274,10 @@ def check_rule1_evidence(text: str) -> Tuple[str, str, int]:
                 continue
             total_tiered += 1
             date_ok = bool(RE_DATE.search(r[date_idx]))
-            has_source = any(
-                (RE_URL.search(c) or RE_DOI.search(c) or (len(c.strip()) >= 2 and not RE_TIER.match(c.strip())))
-                for c in r
-            )
+            # M4 修复（v2.8）：「可识别来源」复用 R2 的 _source_id 严格判定
+            # （URL>DOI>裸域名）。旧分支 `(len>=2 and not RE_TIER.match)` 会被日期单元格
+            # 本身满足，使 R1 实际只检查了日期（空操作），故废弃。
+            has_source = any(_source_id(c) for c in r)
             if not (date_ok and has_source):
                 violations += 1
     if total_tiered == 0:
@@ -281,19 +287,128 @@ def check_rule1_evidence(text: str) -> Tuple[str, str, int]:
     return ("FAIL", f"{violations}/{total_tiered} 行带层级证据缺 日期 或 可识别来源", total_tiered)
 
 
+# T-05 修复（v2.8）：R2 断言级校验的启发式参数。
+# 局部窗口 = 同章节 ∪ 断言行 ±R2_BACKING_WINDOW 行；无支撑断言占比 <= 该阈值时
+# 仅 WARN（排版变体容差），超过则 FAIL（极端情况：大量无支撑 Confirmed 不得放行）。
+# 容差行为的守护场景：审计 T-05（文档级启发式下 30 条 Confirmed 中 29 条无支撑仍 PASS）。
+R2_BACKING_WINDOW = 6
+R2_UNBACKED_WARN_RATIO = 0.2
+
+
+def confirmed_assertion_lines(text: str) -> List[Tuple[int, str]]:
+    """返回带 [Confirmed] 类置信标签的断言行 [(行号, 行文本)]。
+    断言级校验的入口：只对有显式标签的断言逐条求支撑。
+    """
+    out = []
+    for i, line in enumerate(text.splitlines()):
+        if RE_CONFIRMED_TAG.search(line):
+            out.append((i, line))
+    return out
+
+
+def _section_line_ranges(text: str) -> List[Tuple[int, int]]:
+    """各 ## 章节的行区间 [(start, end)]，供断言级局部窗口定位同章节引用。"""
+    heads = [text.count("\n", 0, m.start()) for m in RE_HEADER.finditer(text)]
+    n = text.count("\n") + 1
+    return [(heads[k], heads[k + 1] if k + 1 < len(heads) else n) for k in range(len(heads))]
+
+
+def _citation_lines(text: str) -> Dict[int, List[Tuple[str, str]]]:
+    """行号 -> 该行承载的 [(tier, source_id)]（仅 T1-3）。
+
+    覆盖两种形态：内联「源A(T1, 日期)」/「(https://... T1 2025-03)」，以及证据表
+    数据行（行内同时含 T1-3 层级格 + 日期 + URL/DOI/裸域名）。与
+    qualified_citations_in/table_citations_in 同一套判定语义，仅多了行号定位。
+    """
+    out: Dict[int, List[Tuple[str, str]]] = {}
+    for i, line in enumerate(text.splitlines()):
+        cites: List[Tuple[str, str]] = []
+        for src_tok, tier, _date in RE_CITE.findall(line):
+            if src_tok:
+                cites.append((tier, src_tok))
+        for grp in RE_PAREN.findall(line):
+            tm = RE_TIER.search(grp)
+            if not tm:
+                continue
+            tier = "T" + tm.group(1)
+            if tier not in ("T1", "T2", "T3"):
+                continue
+            if not RE_DATE.search(grp):
+                continue
+            src = _source_id(grp)
+            if src:
+                cites.append((tier, src))
+        stripped = line.strip()
+        if stripped.startswith("|") and not cites:
+            cells = [c.strip() for c in stripped.strip("|").split("|")]
+            tier_cell = None
+            for c in cells:
+                tm = RE_TIER.match(c)
+                if tm and tm.group(1) in ("1", "2", "3"):
+                    tier_cell = "T" + tm.group(1)
+                    break
+            if tier_cell and any(RE_DATE.search(c) for c in cells):
+                for c in cells:
+                    src = _source_id(c)
+                    if src:
+                        cites.append((tier_cell, src))
+                        break
+        if cites:
+            out.setdefault(i, []).extend(cites)
+    return out
+
+
+def _assertion_backing(text: str) -> Dict[int, bool]:
+    """逐条 [Confirmed] 断言求局部支撑：窗口 = 同章节 ∪ ±R2_BACKING_WINDOW 行。
+
+    返回 {断言行号: 窗口内独立 (tier, source_id) >=2}。启发式边界：窗口外但同文档的
+    引用不计入——这正是相对旧版文档级启发式的收紧点（审计 T-05）。
+    """
+    cit = _citation_lines(text)
+    cit_idxs = sorted(cit.keys())
+    ranges = _section_line_ranges(text)
+    result: Dict[int, bool] = {}
+    for i, _line in confirmed_assertion_lines(text):
+        local = set()
+        for j in cit_idxs:
+            if abs(j - i) <= R2_BACKING_WINDOW:
+                local.update(cit[j])
+        for (a, b) in ranges:
+            if a <= i < b:
+                for j in cit_idxs:
+                    if a <= j < b:
+                        local.update(cit[j])
+                break
+        result[i] = len(local) >= 2
+    return result
+
+
 def check_rule2_confirmed(text: str) -> Tuple[str, str]:
     """
     lint 第2项：Confirmed 须 >=2 独立 T1-3 合格引用。
-    文档级启发式：若报告出现 Confirmed 断言，则全篇合格 T1-3 引用去重后须 >=2。
+    v2.8（审计 T-05）升级为断言级校验：每个 [Confirmed] 标签断言须在局部窗口
+    （同章节或 ±R2_BACKING_WINDOW 行）内有 >=2 独立支撑；无支撑占比超过阈值判 FAIL。
+    向后兼容容差：无标签的 Confirmed 字样（散文/历史形态）仍走文档级启发式，
+    由 test_tagless_confirmed_mention_keeps_doc_level_tolerance 守护。
     """
-    has_confirmed = bool(re.search(r"Confirmed", text, re.IGNORECASE)) or bool(RE_CONFIRMED_TAG.search(text))
     quals = qualified_citations_in(text) + table_citations_in(text)
     distinct = set((t, s) for (t, _, s) in quals)
-    if not has_confirmed:
-        return ("PASS", "报告未使用 Confirmed 断言，第2项不适用")
-    if len(distinct) >= 2:
-        return ("PASS", f"Confirmed 断言由 {len(distinct)} 个独立 T1-3 合格引用支撑（>=2）")
-    return ("FAIL", f"Confirmed 断言仅由 {len(distinct)} 个独立 T1-3 合格引用支撑（要求 >=2）；请补充交叉源或降档")
+    tags = confirmed_assertion_lines(text)
+    if not tags:
+        if not re.search(r"Confirmed", text, re.IGNORECASE):
+            return ("PASS", "报告未使用 Confirmed 断言，第2项不适用")
+        if len(distinct) >= 2:
+            return ("PASS", f"Confirmed 字样由 {len(distinct)} 个独立 T1-3 合格引用支撑（>=2，文档级容差）")
+        return ("FAIL", f"Confirmed 字样仅由 {len(distinct)} 个独立 T1-3 合格引用支撑（要求 >=2）；请补充交叉源或降档")
+    backing = _assertion_backing(text)
+    total = len(backing)
+    unbacked = sum(1 for ok in backing.values() if not ok)
+    if unbacked == 0:
+        return ("PASS", f"全部 {total} 条 [Confirmed] 断言均有局部窗口内 >=2 独立 T1-3 合格引用支撑")
+    pct = unbacked / total
+    if pct <= R2_UNBACKED_WARN_RATIO:
+        return ("WARN", f"{unbacked}/{total} 条 [Confirmed] 断言未在局部窗口（同章节或 ±{R2_BACKING_WINDOW} 行）找到 >=2 独立支撑（启发式，建议人工复核）")
+    return ("FAIL", f"{unbacked}/{total} 条 [Confirmed] 断言缺局部支撑（要求 >=2 独立 T1-3）；无支撑占比 {pct:.0%} 超容差 {R2_UNBACKED_WARN_RATIO:.0%}，请降档或补引用")
 
 
 def check_rule3_contradiction(text: str, sections) -> Tuple[str, str]:
@@ -478,10 +593,7 @@ def _provenance_coverage(text: str) -> Optional[float]:
                 continue
             total += 1
             date_ok = bool(RE_DATE.search(r[date_idx]))
-            has_source = any(
-                (RE_URL.search(c) or RE_DOI.search(c) or (len(c.strip()) >= 2 and not RE_TIER.match(c.strip())))
-                for c in r
-            )
+            has_source = any(_source_id(c) for c in r)  # M4 修复：同 R1 严格判定
             if date_ok and has_source:
                 ok += 1
     if total == 0:
@@ -490,8 +602,15 @@ def _provenance_coverage(text: str) -> Optional[float]:
 
 
 def _confirmed_backing(text: str) -> Optional[float]:
-    """Confirmed 断言是否有 >=2 独立 T1-3 合格引用：有则 100，无则 0；无 Confirmed -> None。"""
-    if not (re.search(r"Confirmed", text, re.IGNORECASE) or RE_CONFIRMED_TAG.search(text)):
+    """Confirmed 支撑覆盖率（断言级，v2.8/T-05）：获局部支撑的 [Confirmed] 断言百分比。
+    无标签的 Confirmed 字样退回旧文档级语义（100/0）；无 Confirmed -> None。"""
+    tags = confirmed_assertion_lines(text)
+    if tags:
+        backing = _assertion_backing(text)
+        if not backing:
+            return 0.0
+        return round(100.0 * sum(1 for ok in backing.values() if ok) / len(backing), 1)
+    if not re.search(r"Confirmed", text, re.IGNORECASE):
         return None
     distinct = set((t, s) for (t, _, s) in qualified_citations_in(text) + table_citations_in(text))
     return 100.0 if len(distinct) >= 2 else 0.0
@@ -520,7 +639,20 @@ def render_human(report: dict) -> str:
     return "\n".join(lines)
 
 
+def _configure_stdio() -> None:
+    """把 stdout/stderr 设为 UTF-8，避免 Windows 默认 GBK 控制台无法输出 ✔/✘/⚠ 等字符时
+    print 抛 UnicodeEncodeError、进程以退出码 1 崩溃（合法样例也拿不到 PASS 退出码）。
+    与 scripts/setup_mcp.py 入口适配同语义；按「脚本独立可运行」惯例各脚本自包含，
+    不提取共享模块。"""
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(encoding="utf-8", errors="replace")
+        except (AttributeError, OSError, ValueError):
+            pass
+
+
 def main(argv=None) -> int:
+    _configure_stdio()
     p = argparse.ArgumentParser(
         description="dmr 终稿程序化机检门禁（零依赖，离线安全）",
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -543,7 +675,9 @@ def main(argv=None) -> int:
         return 2
 
     if args.json:
-        print(json.dumps(report, ensure_ascii=False, indent=2))
+        # ensure_ascii=True：JSON（机器可读）路径输出纯 ASCII，即使 stdout 编码受限
+        # 也不受 errors="replace" 破坏；json.loads 对 \uXXXX 转义无损还原。
+        print(json.dumps(report, ensure_ascii=True, indent=2))
     else:
         print(render_human(report))
 
