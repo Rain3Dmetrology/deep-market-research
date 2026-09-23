@@ -23,7 +23,7 @@
 
 | 维度 | 数据源 / Skill | 用途 | 推荐 | 接入方式 |
 | ------ | -------- | ------ | ------ | ------ |
-| **搜索入口** | 内置 WebSearch/WebFetch · Firecrawl · **Exa** · Tavily · SearXNG · Novada · AgentKey | 通用联网检索、查证、聚合数据（可替代缺失的专业 MCP） | 🛟 内置基座(始终) · 🥇 Firecrawl · 🥈 Exa/Tavily/Novada · 🛟 SearXNG/AgentKey（并行增强） | 🟢 内置基座(web_search/web_fetch) · 🔴 Firecrawl/Exa/Tavily/Novada 需 key · 🟡 SearXNG(自托管)/AgentKey(连接器) 需连 MCP/账号 |
+| **搜索入口** | 内置 WebSearch/WebFetch · **Exa** · TinyFish · Firecrawl · Tavily Research · SearXNG · Novada · AgentKey | 通用联网检索、查证、聚合数据（按单 owner 升级链使用） | 🥇 内置 WebSearch（默认） · 🎯 Exa（难搜/语义） · 🎯 TinyFish（第二索引/浏览器） · 🎯 Firecrawl（crawl/scrape/interact） · 🎯 Tavily Research（多源综合） · 🛟 其余按需兜底 | 🟢 内置基座(web_search/web_fetch) · 🔴 外部服务按各平台认证方式接入；不要默认并行调用 |
 | **AI 搜索（可选）** | Perplexity · Tavily · AnySearch · 秘塔搜索 | 带引用的 AI 搜索，无 key 跳过 | 🎯 Perplexity/秘塔 · 🥈 Tavily · 🎯 AnySearch | 🔴 均需 API key（无 key 跳过） |
 | **社媒 / 热评** | **agent-reach** / **agent-browser** / **web-access**（CDP 浏览器自动化 skill，可选） | 小红书/知乎/Reddit/Bluesky/X/评论抓取（agent-reach 实测 6 社媒 + 5 基础；**抖音/微博 走 web_search 兜底，公众号走 wechat-article-search skill，非 agent-reach 频道**） | 🎯 平台专有 | 🟡 agent-reach / agent-browser / web-access 需装 skill（web-access 需 Node22 + 本地 Chrome CDP）· 🟢 web_search 内置（LLM 自带，零配置，新装即用） |
 | **知乎（技术+反馈）** | **zhihu MCP**（search_content + hot_list） | 中文技术教程、用户反馈、产品体验交叉验证 | 🎯 平台专有 | 🟡 内置授权（30 天续期） |

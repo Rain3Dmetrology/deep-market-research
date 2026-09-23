@@ -106,12 +106,29 @@ def test_check_consistency_ignores_deprecated_mention_in_notice(tmp_path):
                            "layer": "default", "needs_key": True, "status": "DEPRECATED"},
     }
     # midu only appears inside a deprecation/removal notice -> must NOT block
-    skill = "midu was deprecated; use Firecrawl instead.\n"
+    skill = "midu was deprecated and removed.\n"
     reg_path = _write_tmp_repo(tmp_path, registry, skill)
     out = tmp_path / "parity.json"
     rc = s.check_consistency(registry_path=str(reg_path), out_path=str(out), repo_root=str(tmp_path))
     rep = json.loads(out.read_text(encoding="utf-8"))
     assert rep["blocking"] == []
+    assert rep["blind"] == []
+    assert rep["orphan"] == []
+    assert rc == 0
+
+
+def test_check_consistency_excludes_undocumented_deprecated_from_orphans(tmp_path):
+    registry = {
+        "wechat_mp_rss": {"name": "WeChat MP RSS", "url": "https://example.invalid/rss",
+                          "layer": "deprecated", "needs_key": True, "status": "DEPRECATED"},
+    }
+    reg_path = _write_tmp_repo(tmp_path, registry, "Current docs mention no legacy RSS bridge.\n")
+    out = tmp_path / "parity.json"
+    rc = s.check_consistency(registry_path=str(reg_path), out_path=str(out), repo_root=str(tmp_path))
+    rep = json.loads(out.read_text(encoding="utf-8"))
+    assert rep["blocking"] == []
+    assert rep["blind"] == []
+    assert rep["orphan"] == []
     assert rc == 0
 
 

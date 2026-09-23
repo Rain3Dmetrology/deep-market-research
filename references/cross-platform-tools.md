@@ -20,11 +20,11 @@
 
 > 推荐层级：🥇 首选（keyless 零配置）· 🥈 备选 · 🥉 备选 · 🛟 兜底（缺 key 也能跑）· 🎯 个性化（需 key / 账号 / 特定平台）· ⚠️ 不推荐通用。免费额度为 2026-07 交叉验证快照，搜索 API 季度漂移，生产前请回源官网复核。
 
-### 1.1 默认层 · 零依赖零安装（质量基座 · 🛟 兜底）
+### 1.1 默认层 · 零依赖零安装（质量基座 · 默认 owner）
 
 | 工具 | 能力 | 接入方式 | 费用 | 推荐层级 | 备注 |
 |------|------|----------|------|----------|------|
-| LLM 内置搜索 | 通用网页搜索 / 网页抓取 | 无需配置 | 含模型订阅/额度 | 🛟 兜底（基座） | 各平台实现不同，质量取决于模型 |
+| LLM 内置搜索 | 通用网页搜索 / 网页抓取 | 无需配置 | 含模型订阅/额度 | 🥇 默认 owner（基座） | 普通联网检索默认使用；结果不足或需交叉验证时再升级到专用索引 |
 | 免费 REST API | 学术/代码/开放数据 | 直调 OpenAlex / arXiv / Crossref / GitHub API 等 | 免费 | 🛟 兜底（基座） | 优先用于论文、DOI、开源项目 |
 | DuckDuckGo | 通用网页搜索 | 社区 MCP（stdio）或 WebFetch | 免费、免 key | 🛟 兜底 | HTML 前端抓取，无 SLA，偶发解析失效；低频兜底 |
 
@@ -32,10 +32,11 @@
 
 | 工具 | 能力 | 接入方式 | 免费额度（2026-07 交叉验证） | 推荐层级 | 备注 |
 |------|------|----------|------------------------------|----------|------|
-| Firecrawl | 网页抓取 / 搜索 / 页面交互 | 远程 MCP `https://mcp.firecrawl.dev/v2/mcp`（keyless）或 API key | keyless 1,000 积分/月 | 🥇 首选 | 官方 keyless MCP，开箱即用；额度耗尽可绑 key |
-| DeepWiki | GitHub 仓库研究 | 远程 MCP `https://mcp.deepwiki.com/mcp`（keyless） | 免费（仅公共仓库） | 🥇 首选 | Cognition 官方，免登录；技术仓库调研极有价值 |
-| Exa | 神经/垂直索引搜索 | 远程 MCP `https://mcp.exa.ai/mcp` 需 API key | 1,000 请求/月（免费层） | 🥈 备选 | 神经搜索质量高；免费层较小 |
-| Tavily | AI 搜索 API | 远程 MCP `https://mcp.tavily.com/mcp` 或 API key | 1,000 积分/月 | 🥈 备选 | 2026-02 被 Nebius 收购（$275M–$400M），长期独立性待观察 |
+| Firecrawl | 网页抓取 / 搜索 / 页面交互 | 远程 MCP `https://mcp.firecrawl.dev/v2/mcp`（keyless）或 API key | keyless 1,000 积分/月 | 🎯 抓取专家 | 只在 crawl / map / scrape / interact / 复杂页面提取时升级；不抢普通搜索默认路由 |
+| DeepWiki | GitHub 仓库研究 | 远程 MCP `https://mcp.deepwiki.com/mcp`（keyless） | 免费（仅公共仓库） | 🎯 GitHub 专项 | Cognition 官方，免登录；仅仓库研究场景进入路由 |
+| Exa | 神经/垂直索引搜索 | 远程 MCP `https://mcp.exa.ai/mcp` 需 API key | 1,000 请求/月（免费层） | 🎯 难搜/语义 | 当默认 WebSearch 结果不足、需冷门资料/语义发现/精确 primary-source discovery 时升级 |
+| TinyFish | 搜索 / fetch / browser automation | 平台已连接的 TinyFish MCP / connector（若可用） | 依平台/账户 | 🎯 第二索引/浏览器 | 普通搜索只作第二索引；需要网页交互、结构化浏览器自动化或 stealth 时再升级，不抢默认搜索路由 |
+| Tavily | AI 搜索 / Research | 远程 MCP `https://mcp.tavily.com/mcp` 或 API key | 1,000 积分/月 | 🎯 深研综合 | 普通 Search 降权；Research 适合一次性多源综合草稿，关键事实仍回原始来源复核 |
 | Brave Search | 独立索引搜索 | API key 直调 | $5 月度赠金 ≈ 1,000 次 | 🥉 备选 | 独立索引、隐私优先；需绑卡/验证 |
 | Novada | 网页搜索/SERP/抓取/提取/地图/爬取/深度研究（25+ 工具） | 托管 Streamable-HTTP MCP，`npx novada-mcp` | 免费 1,000 次/月 | 🥈 备选 | 新兴 SaaS，免安装，覆盖 195 国；长期可用性待观察 |
 | Novada Web Unblocker | 住宅代理 / 反爬解锁，抓取地理封锁 / 反 bot 受保护的页面 | 代理网关（用户名+密码，或 `NOVADA_API_KEY`）| 付费（按流量）| 🛟 兜底（解锁层）| 与 Firecrawl 反爬能力部分重叠；Firecrawl 已覆盖多数解锁场景。仅作「Firecrawl/WebFetch 仍被墙」的兜底解锁层，不进核心管线；key 本地仅存 |

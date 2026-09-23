@@ -488,23 +488,29 @@ def check_consistency(registry_path=None, out_path=None, repo_root=None):
             if referenced:
                 blocking.append(key)
 
-    # 2) Parity: build S_doc from documented aliases, S_reg from registry keys.
-    s_doc = set()
-    for alias, mapped_key in KNOWN_SOURCES.items():
-        if re.search(r"\b" + re.escape(alias) + r"\b", doc_text, re.IGNORECASE):
-            s_doc.add(mapped_key)
-    s_reg = set(registry.keys())
-    # Audit T-10: deprecated registry entries are intentionally retained in the
-    # registry (as deprecation records) while no longer actively documented.
-    # Their doc<->registry gap is a *declared deprecation*, not an orphan
-    # probe -- reporting them as orphans is stale noise (the probe itself is
-    # already skipped in run_probe). Exclude them from the orphan diff; the
-    # deprecated-as-active-route blocking check above stays untouched.
-    s_deprecated = {
+    # 2) Parity: compare only actively monitored registry entries.
+    # Deprecated entries are intentionally retained as tombstones so the
+    # blocking check above can catch accidental reactivation, but they are not
+    # probed and therefore must not appear as blind/orphan parity noise.
+    deprecated_keys = {
         key for key, spec in registry.items()
         if str(spec.get("status", "")).upper() == "DEPRECATED"
         or spec.get("layer", "default") == "deprecated"
     }
+    s_doc = set()
+    for alias, mapped_key in KNOWN_SOURCES.items():
+        if mapped_key in deprecated_keys:
+            continue
+        if re.search(r"\b" + re.escape(alias) + r"\b", doc_text, re.IGNORECASE):
+            s_doc.add(mapped_key)
+    # Audit T-10: deprecated registry entries are intentionally retained in the
+    # registry (as deprecation records) while no longer actively documented.
+    # Their doc<->registry gap is a *declared deprecation*, not an orphan
+    # probe -- reporting them as orphans is stale noise (the probe itself is
+    # already skipped in run_probe). Exclude them from the orphan diff on both
+    # sides; the deprecated-as-active-route blocking check above stays untouched.
+    s_reg = set(registry.keys()) - deprecated_keys
+    s_deprecated = deprecated_keys
     blind = sorted(s_doc - s_reg)
     orphan = sorted((s_reg - s_doc) - s_deprecated)
 

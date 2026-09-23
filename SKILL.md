@@ -2,11 +2,11 @@
 name: deep-market-research
 slug: deep-market-research
 displayName: Deep Market Research
-version: "2.8.0"
+version: "2.9.0"
 summary: 深度市场 / 竞品 / 技术趋势调研工作流，输出稳定、可复现、带引用溯源的研究报告。
 description: |
   深度市场 / 竞品 / 技术趋势调研工作流，输出稳定、可复现、带引用溯源的研究报告。
-  核心能力：确定性 Step 0->8 流水线 + NATO 式 4 级源分级 + >=2 源交叉验证 +
+  核心能力：按复杂度裁剪的 Step 0->8 流水线 + NATO 式 4 级源分级 + >=2 源交叉验证 +
   主动去重/去陈旧/去伪造/去矛盾 + 平台无关（默认零依赖，可选 MCP/API 后端优雅降级）+
   监测增量模板 E + 强制实体级证据缓存 + 程序化机检门禁（validate_report.py /
   validate_param_card.py，零依赖、离线安全）+ **plan-first 验收先行**（Step 0 产出
@@ -14,23 +14,25 @@ description: |
   销售透镜 4 类 + 问题库种子 4 问，零新数据源）。
   适用：市场调研、竞品分析、行业格局、技术趋势、竞品对位、尽调、产业链研究、投资机会发现、
   销售与商业化分析（GTM/渠道/定价/生意模式）、周期监测。
+  触发纪律：仅在用户明确要求深度/系统性市场、竞品、行业、技术趋势、尽调、产业链研究，
+  或任务明显需要多源综合时使用。普通“分析一下”、单点事实查询、简单对比不要触发本 Skill。
 license: MIT
 compatibility: >
   Platform-agnostic: runs on ANY agent that loads skills / system prompts.
   DEFAULT = ZERO dependency: relies only on the agent's built-in web_search / web_fetch
   plus free public REST APIs (OpenAlex etc.). No MCP config, no local process, no install.
-  Optional tools (Exa / Firecrawl / Tavily / Perplexity / GPT Researcher / ModelScope)
+  Optional tools (Exa / TinyFish / Firecrawl / Tavily / Perplexity / GPT Researcher / ModelScope)
   degrade gracefully when absent. See references/cross-platform-tools.md for per-platform setup.
   HONESTY RULE: only list skills/connectors actually available in the environment.
 metadata:
-  version: "2.8.0"
+  version: "2.9.0"
   author: "Rain / WorkBuddy"
   adapted_from: "sota-research + RSSnewsnowTrendRadar + 行业趋势深度调研 + 公司竞品深度调研 + market-researcher + material-organizer + llm-wiki + NATO Admiralty + Cat-Research。详见 references/optional-modules.md。"
 ---
 
 # Deep Market Research Workflow -- 深度市场调研工作流
 
-> 版本: 2.8.0 | 许可证: MIT
+> 版本: 2.9.0 | 许可证: MIT
 > 设计目标：**输出质量稳定、可复现、去重去旧去假去矛盾、并吸收真实用户热评**。
 
 ---
@@ -85,9 +87,9 @@ metadata:
          |
          v
 +----------------------------------------------------------+
-| Step 0: 范围收敛 (引导式)                                  |
-|  澄清: 决策用途? 竞品集(T1/T2/T3)? 地理/时间范围? 输出形态? |
-|  中英文关键词映射 + 歧义消解 -> 精确研究边界                |
+| Step 0: 范围收敛 (推断优先)                                  |
+|  能从上下文确定的参数直接填；仅对会实质改变结论的关键歧义询问 |
+|  决策用途/竞品集/地理时间/输出形态 + 关键词映射 -> 研究边界   |
 |  初始化研究参数卡(课题/查询类型/模板/timeRange/语言)        |
 |  产出: 验收标准(可验证目标,每条含度量锚点) + 终止条件      |
 |        (达标即停/预算耗尽即停/最多N轮) -> 记入参数卡       |
@@ -103,11 +105,15 @@ metadata:
 |  搜索策略: 第一段宏观锚定(市场规模/CAGR/政策)            |
 |           第二段产业链解剖(上下游利润分配/玩家格局/卡脖子) |
 |           第三段趋势预测与避坑(红利/颠覆技术/失败案例/反向)|
-|  搜索入口(基座并行): 内置 WebSearch/WebFetch 始终调用 + 若已配置 |
-|    Tavily/Perplexity/AgentKey 并行增强(无 key 跳过)；     |
-|    优先级与去重: 内置搜索 > 直连工具 > 聚合器--聚合器     |
-|    (如 AgentKey) 仅在对应直连工具不可用、或用户显式开启时 |
-|    使用；同一路由内不重复调用功能等价的工具               |
+|  搜索入口(单 owner 升级链, 允许证据域并行):                      |
+|    每个研究步骤默认只用 1 个通用搜索 owner；内置 WebSearch 默认； |
+|    结果不足/需交叉验证时再升级 Exa/TinyFish；整站/复杂抓取用     |
+|    Firecrawl；一次性多源综合可选 Tavily Research。               |
+|    例外(可并行): 专业证据域(专利/法律/财务/学术/UGC)与通用搜索   |
+|    不属于重复调用，可同步跑；CN 与 Global 按目标市场选择可并行。  |
+|    优先级与去重: 内置搜索 > 直连工具 > 聚合器--聚合器(如 AgentKey)|
+|    仅在对应直连工具不可用、或用户显式开启时使用；同一路由内       |
+|    不重复调用功能等价的工具。                                     |
 |  专业数据库: 通达信(A股F10) 智慧芽(专利) 自选股/westock(财报) |
 |             威科/元典/北大法宝(法律) 天眼查/企查查/启信慧眼(工商)|
 |             GitHub(gh CLI+web,Trending) ima(知识库)/notion              |
@@ -208,10 +214,10 @@ metadata:
 | Step 7: 综合 + 100分评分 (质量环 ratchet)                 |
 |  评分维度(例: 竞品/技术): 市场存在感30 + 技术成熟度25      |
 |           + 势头/动量20 + 用户口碑15 + 风险10 -> A+~D       |
-|  质量环: >=2 轮(最多5)，Critic 多维打分，ratchet 保最优版  |
-|  对抗审计: 终稿前跑 corpus critic + >=2 类并行 critic        |
-|    (事实一致性/源层级一致性/时效/反向观点遗漏)-> 缺陷回对应  |
-|    Step 修补, 不整篇 regenerate 掩盖                        |
+|  质量环: 标准版默认 1 轮 Critic；发现实质缺陷或深度尽调才追加，最多3轮 |
+|  对抗审计: 终稿前跑 1 次 corpus critic；按风险选必要专项检查，不默认并行 |
+|    (事实一致性/源层级/时效/反向观点)-> 缺陷回对应 Step 局部修补        |
+|    无新缺陷即停止，不为凑轮数继续审稿                         |
 |  加权质量分 = 源25% + 事实35% + 结论40%                    |
 +----------------------------------------------------------+
          |
@@ -238,7 +244,7 @@ metadata:
 **2 五阶段闭环（深度研究专用）**
 - **Phase 1 初始调研**：广泛初调生成研究摘要（定义背景 / 主流观点 / 争议焦点 / 关键数据 / 主要参与者 / 最新进展）。
 - **Phase 2 规划大纲**：基于摘要规划 3-5 章大纲（逻辑递进、不重叠、无遗漏）。
-- **Phase 3 逐章深度研究**：每章走 `检索 -> 草稿 -> 审稿 ->（修订）-> 复审` 闭环。审稿按 6 维（来源充分性 / 事实准确性 / 观点均衡性 / 内容深度 / 结构清晰度 / 格式规范性）审查；最多 3 轮，第 3 轮强制通过并附「遗留改进建议」。
+- **Phase 3 逐章深度研究**：每章先走 `检索 -> 草稿 -> 审稿`。按 6 维（来源充分性 / 事实准确性 / 观点均衡性 / 内容深度 / 结构清晰度 / 格式规范性）检查；只有发现实质缺陷才进入 `修订 -> 复审`，最多 2 轮。仍未解决的问题显式列入「遗留问题」，不以“强制通过”掩盖缺口。
 - **Phase 4 撰写框架**：引言 / 结论 / 目录 / 参考文献（APA 格式、去重排序）。
 - **Phase 5 发布整合**：章节连续编号 + 分隔线 + 链接检查 + 参考文献去重。
 
@@ -254,14 +260,14 @@ metadata:
 
 - **0 可选：程序化机检门禁（validate_report.py）**：交付前可运行 `python scripts/validate_report.py <报告.md> [--template A|B|C|D|E] [--strict] [--json]` 对下方第 5 项 6 条 lint 做机检，输出 PASS/FAIL + 覆盖率，退出码 0/1 供 CI 或后续校验环节拦截。**零依赖（仅标准库）、离线安全（死链检查默认关闭）**，脚本缺失或环境无 Python 则跳过、绝不阻断 Step 0->8 主管线。机检为启发式前置门禁，不替代人工对抗审计。
 
-- **1 对抗式审计（adversarial audit）**：终稿交付前，必须独立跑一轮「对抗式审计」--以一个 corpus critic 通读全篇找自相矛盾/无源结论，并至少并行 2 类 critic 角色挑战：
+- **1 对抗式审计（adversarial audit）**：终稿交付前必须独立跑一轮 corpus critic 通读全篇找自相矛盾/无源结论；再按本次研究的主要风险从下列角色中选择必要的专项检查（可在同一审计 pass 内完成，不要求默认并行多个 critic）：
   - *事实一致性 critic*：每条结论是否都有对应 (源, 层级, 日期) 支撑？
   - *源层级 critic*：是否把 Tier 4 当成了硬事实？Confirmed 是否真有 >=2 独立 Tier1-3？
   - *时效 critic*：趋势/市场类主张是否用了近 3-6 月？outdated 是否标了？
   - *反向观点 critic*：是否遗漏了 contrarian / 失败案例 / 看空视角（尤其行业赛道类）？
   - 发现缺陷 -> **回到对应 Step 局部修补**，不整篇 regenerate 掩盖旧错。
 
-- **2 patch-never-regenerate 原则**：终稿只允许 surgical edit（局部 patch）；禁止为「修正一处」而整篇重新生成。每次 patch 后重跑一次对抗审计确认未引入回归。
+- **2 patch-never-regenerate 原则**：终稿优先 surgical edit（局部 patch），禁止为「修正一处」而整篇重新生成。patch 后先回归受影响的事实链；只有改动跨多个章节/证据链时才重跑全篇审计。
 
 - **3 canonical query gospel（用户原话贯穿）**：Step 0 澄清出的「决策用途 / 竞品集 / 地理时间范围 / 输出形态」是 gospel，贯穿全篇；终稿必须可逐条回推到原始问题，**禁止临场偷换议题或扩大范围**。
 
@@ -296,11 +302,12 @@ metadata:
 ## 五、工具分层（默认零依赖，可选工具按平台接入）
 
 > **默认层（零安装）**：LLM 内置 `web_search` / `web_fetch` + 免费 REST API（OpenAlex 等）；主力入口，不依赖 MCP / 本地进程。
-> **可选增强层（缺失则优雅跳过，非质量必需）**：Firecrawl / DeepWiki / Exa / Tavily / Brave / Perplexity / 秘塔 / AnySearch / ModelScope / SearXNG / Novada 等按平台接入。各平台接入见 **references/cross-platform-tools.md**。
+> **可选增强层（缺失则优雅跳过，非质量必需）**：Exa / TinyFish / Firecrawl / Tavily Research / DeepWiki / Brave / Perplexity / 秘塔 / AnySearch / ModelScope / SearXNG / Novada 等按平台接入。各平台接入见 **references/cross-platform-tools.md**。
+> **Harness v2 路由纪律**：一次检索步骤只选一个通用搜索 owner；内置 WebSearch 默认，结果不足/时效性存疑/用户明确要求交叉验证时才启用第二索引。专业数据库/API 不算重复搜索。不要为了“探测是否可用”而调用工具。
 
 | 步骤 | 默认层（零依赖，所有平台通用） | 可选增强层（按平台接入，缺失则跳过） |
 |------|----------------|-------------------------------|
-| 搜索入口 | 内置 `web_search` / `web_fetch` + 免费 REST API | Firecrawl / DeepWiki（keyless）/ Exa / Tavily / Brave / Perplexity / Novada / SearXNG |
+| 搜索入口 | 内置 `web_search` / `web_fetch` + 免费 REST API | Exa（难搜/语义）/ TinyFish（第二索引/浏览器）/ Firecrawl（crawl/scrape/interact）/ Tavily Research（一次性多源综合）/ DeepWiki（GitHub 专项）/ 其他按需兜底 |
 | 社媒/热评 | `web_search` 通用社媒 + WebFetch | agent-reach / agent-browser；UGC 仅作 T4 信号 |
 | 专利 | WebSearch 公开库（Google Patents / USPTO / EPO / WIPO） | patsnap-search MCP |
 | 财经/财报 | WebSearch 公司官网 / 财报 / 财经媒体 | westock-mcp / tdx-connector MCP + markitdown |
@@ -349,7 +356,7 @@ metadata:
 15. 把「环境受限」误判为「能力不足」 -> 核心源不可达时，必须**显式标注"因环境受限未覆盖"**，绝不降格为低置信结论或编造填充。
 16. 终稿不经对抗审计 / 整篇 regenerate 掩盖 / 偷换议题 -> 必须跑对抗式审计，仅做 surgical patch，canonical query 贯穿全篇，交付前勾 lint 自检清单。
 17. 把可选后端当必需 -> 可选增强缺 key / 未安装 / 失败一律优雅跳过，绝不阻断主管线。
-    > runtime探测：可选skill可用性判断 = try-and-skip（尝试调用并捕获失败），不预检skill是否加载。与规则17一致：失败一律优雅跳过。
+    > runtime路由：不主动探测可选 skill/connector。只有当前任务命中其独特能力且已知可用时才调用；调用失败再优雅降级到当前 owner 或下一层。
 18. 竞品关键参数单源下定论 -> **定价 / 版本号 / MCP 支持 / 许可证 / 收购归属**等可量化事实，交叉验证源数须 **>=3 个独立源**。
 19. 把可选工具当质量前提 -> 可选工具**只丰富素材来源，不是质量必需**。
 20. 绑定特定平台机制 -> 本技能**不假设任何平台的 MCP 配置文件、agent-team 编排协议或专有后端存在**——多智能体编排由上层编排层（如 RAT）承担，本内核保持协议无关。
@@ -364,9 +371,11 @@ metadata:
 
 ## 七、触发与执行约定
 
-- 用户说"调研/分析/竞品/格局/趋势/深度调研/公司尽调/扒一下/挖一下/对位/对标"等即触发本流程；模式路由（触发词与强制项）以 §四「模板选择」为唯一权威。
-- 默认跑完整 Step 0-8；若用户要"快版"，至少保留 Step1 + Step4 + Step8，但必须注明"快版，未全覆盖质量环"。
-- **增量知识沉淀（Karpathy 模式 · 强制实体级证据缓存）**：每次完成后，把「评分卡 + 开放问题 + 核心证据」沉淀为**结构化 markdown note**（带 YAML frontmatter），落点三选一或并存：**ima 知识库（首选）/ Obsidian（PARA 结构）/ 本地 wiki**，采用三层结构（raw 源页 / wiki 合成页 / schema）。note 内必含**实体级证据缓存表**（实体 | 字段 | 值 | 源URL | 层级 | 日期 | 置信），作为下次同主题调研的**强制预读输入**：重跑同主题时**必须先读历史 note**（消费缓存证据、避免重复拉取），执行 **Lint 操作**扫描矛盾/过时/孤儿页；跳过预读直接全网重采视为违反预算纪律（重复拉取）。
+- 触发纪律：仅在用户明确要求深度/系统性市场、竞品、行业、技术趋势、尽调、产业链研究，或任务明显需要多源综合时触发。普通“分析一下”、单点事实查询、简单对比默认不触发本流程。用户说"调研/分析/竞品/格局/趋势/深度调研/公司尽调/扒一下/挖一下/对位/对标"等即触发；模式路由（触发词与强制项）以 §四「模板选择」为唯一权威。
+- **行业赛道模式**：查询含"行业趋势/赛道/产业链/投资机会/商业化落地/市场规模"-> 模板 B，强制利润穿透、>=1反方观点、1-2年趋势窗口、每板块1非散文元素。
+- **公司/竞品模式**：查询含"公司/竞品/尽调/扒一下/挖一下/对位/对标"-> 模板 C，强制四维分析、7字段证据、真实负面多渠道验证、SWOT、五类情景推演。
+- 按复杂度选模式：普通单点事实/简单对比不进入本 Skill；快版至少保留 Step1 + Step4 + Step8，但必须注明"快版，未全覆盖质量环"；标准版执行 Step 0-8 中与任务相关的步骤；只有明确深度调研/尽调才运行完整 Step 0-8 + 质量环。不得为形式完整执行无价值步骤。
+- **增量知识沉淀（Karpathy 模式 · 默认关闭）**：仅在用户明确要求，或当前 workspace 已定义持久化流程时写入知识库；默认研究任务不产生额外写入副作用。启用时把「评分卡 + 开放问题 + 核心证据」沉淀为**结构化 markdown note**（带 YAML frontmatter），落点三选一或并存：**ima 知识库（首选）/ Obsidian（PARA 结构）/ 本地 wiki**，采用三层结构（raw 源页 / wiki 合成页 / schema）。note 内必含**实体级证据缓存表**（实体 | 字段 | 值 | 源URL | 层级 | 日期 | 置信）。重跑同主题时**若已存在历史 note 则必须先读**（消费缓存证据、避免重复拉取），执行 **Lint 操作**扫描矛盾/过时/孤儿页；无历史 note 则正常全网采集，不视为违规。
 - **季度基准自测**：每季度或大版本变更时，跑一次 `benchmarks/industrial-vision-baseline.md` 的 5 题固定基准（工业视觉域）+ Q6 销售路由回归题（不计均分），按 100 分制评分卡记录分数演化，防止质量回归不可见。
 
 ---
@@ -381,7 +390,7 @@ metadata:
 | `references/faq.md` | 常见问题（8 问） |
 | `references/example.md` | 端到端完整示例（工业机器人赛道调研） |
 | `references/parameter-card-schema.md` | 研究参数卡结构化 schema 唯一权威（含 `验收标准` 推荐字段） |
-| `CHANGELOG.md` | 完整更新史（v2.0.0 -> v2.8.0） |
+| `CHANGELOG.md` | 完整更新史（v2.0.0 -> v2.9.0） |
 | `benchmarks/industrial-vision-baseline.md` | 5 题固定基准集（工业视觉域）+ Q6 销售路由回归题 + 季度分数演化记录 |
 | `sources.registry.yaml` | 信源注册表（default / optional / deprecated 三层） |
 | `scripts/source_health.py` | 信源健康监控 + 静态 PR 一致性门禁 |
