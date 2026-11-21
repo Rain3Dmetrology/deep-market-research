@@ -1,69 +1,27 @@
-# 跨平台可选工具接入指南（随仓库版本演进，以 CHANGELOG 为准）
+# 跨平台可选工具接入指南
 
-> 本文件是 `SKILL.md` 的**可选补充**。核心调研流程（Step 0–8 + 三-B 深度研究闭环）**零依赖、零安装**即可运行，只用 LLM 内置 `web_search` / `web_fetch` + 🆓 免费 REST API。
-> 本文档仅说明：如何为**有需要的用户**在各自平台上接入**可选增强工具**以丰富素材来源。
-> **缺失任何工具都不影响主流程**——未接入则自动回退默认层，输出质量不降。
-
----
+> 本文件只说明可选工具的**接入方法和平台差异**。何时调用、如何分类、默认路由和证据规则，以 references/data-sources.md 为唯一权威。
 
 ## 0. 通用原则
 
-1. **可选 ≠ 必需**：所有工具仅作素材源增强；主检索永远由内置搜索 + 免费 API 兜底（基座始终并行调用，增强层并行叠加，结论以 Step 4 交叉验证裁决）。
-2. **优雅降级**：某工具未配置 / 无 key / 调用失败 → 跳过并在报告注明"未覆盖该维度"，绝不报错中断。
-3. **不绑死平台**：SKILL.md 主管线不引用任何平台的 MCP 文件名、agent-team 协议或专有后端。换平台无需改技能。
-4. **远程优先**：优先用官方远程 MCP（URL 形式，零安装）；本地进程仅作"最强深度"可选项。
-5. **交叉验证来源**：下列免费额度为 2026-07 通过多家第三方定价聚合站 + 官方文档交叉验证后的快照；搜索 API 季度漂移，生产前请回源官网复核。
+1. **路由与接入分离**：本文件不定义 Provider 排名，也不要求安装清单中的所有工具。
+2. **单 owner 默认**：每个广域查询簇先选一个 owner；只有明确证据缺口、时效问题、来源冲突或用户要求时才增加第二个。
+3. **专业源按需并行**：官方披露、论文、专利、法律、GitHub 原始记录和 UGC 是不同证据域，不属于重复广域搜索。
+4. **能力分别调用**：Search、Extract / Crawl、Research Agent、Browser Automation 和 Aggregator 不互相替代；同一任务不叠加多个功能等价工具。
+5. **优雅降级**：工具未连接、无凭据或失败时跳过并记录未覆盖项，不阻断 DMR 主流程。
+6. **费用与数据边界**：计费调用前确认预算；托管聚合器不得接收未经授权的私有代码、凭据或客户数据。
+7. **接入事实需复核**：下方平台配置是接入示例，不保证当前账号权限、额度或供应商接口未发生变化。
 
----
+## 1. 按能力查找接入说明
 
-## 1. 可选工具清单（按推荐层级分类）
-
-> 推荐层级：🥇 首选（keyless 零配置）· 🥈 备选 · 🥉 备选 · 🛟 兜底（缺 key 也能跑）· 🎯 个性化（需 key / 账号 / 特定平台）· ⚠️ 不推荐通用。免费额度为 2026-07 交叉验证快照，搜索 API 季度漂移，生产前请回源官网复核。
-
-### 1.1 默认层 · 零依赖零安装（质量基座 · 默认 owner）
-
-| 工具 | 能力 | 接入方式 | 费用 | 推荐层级 | 备注 |
-|------|------|----------|------|----------|------|
-| LLM 内置搜索 | 通用网页搜索 / 网页抓取 | 无需配置 | 含模型订阅/额度 | 🥇 默认 owner（基座） | 普通联网检索默认使用；结果不足或需交叉验证时再升级到专用索引 |
-| 免费 REST API | 学术/代码/开放数据 | 直调 OpenAlex / arXiv / Crossref / GitHub API 等 | 免费 | 🛟 兜底（基座） | 优先用于论文、DOI、开源项目 |
-| DuckDuckGo | 通用网页搜索 | 社区 MCP（stdio）或 WebFetch | 免费、免 key | 🛟 兜底 | HTML 前端抓取，无 SLA，偶发解析失效；低频兜底 |
-
-### 1.2 可选增强层 · 按需接入
-
-| 工具 | 能力 | 接入方式 | 免费额度（2026-07 交叉验证） | 推荐层级 | 备注 |
-|------|------|----------|------------------------------|----------|------|
-| Firecrawl | 网页抓取 / 搜索 / 页面交互 | 远程 MCP `https://mcp.firecrawl.dev/v2/mcp`（keyless）或 API key | keyless 1,000 积分/月 | 🎯 抓取专家 | 只在 crawl / map / scrape / interact / 复杂页面提取时升级；不抢普通搜索默认路由 |
-| DeepWiki | GitHub 仓库研究 | 远程 MCP `https://mcp.deepwiki.com/mcp`（keyless） | 免费（仅公共仓库） | 🎯 GitHub 专项 | Cognition 官方，免登录；仅仓库研究场景进入路由 |
-| Exa | 神经/垂直索引搜索 | 远程 MCP `https://mcp.exa.ai/mcp` 需 API key | 1,000 请求/月（免费层） | 🎯 难搜/语义 | 当默认 WebSearch 结果不足、需冷门资料/语义发现/精确 primary-source discovery 时升级 |
-| TinyFish | 搜索 / fetch / browser automation | 平台已连接的 TinyFish MCP / connector（若可用） | 依平台/账户 | 🎯 第二索引/浏览器 | 普通搜索只作第二索引；需要网页交互、结构化浏览器自动化或 stealth 时再升级，不抢默认搜索路由 |
-| Tavily | AI 搜索 / Research | 远程 MCP `https://mcp.tavily.com/mcp` 或 API key | 1,000 积分/月 | 🎯 深研综合 | 普通 Search 降权；Research 适合一次性多源综合草稿，关键事实仍回原始来源复核 |
-| Brave Search | 独立索引搜索 | API key 直调 | $5 月度赠金 ≈ 1,000 次 | 🥉 备选 | 独立索引、隐私优先；需绑卡/验证 |
-| Novada | 网页搜索/SERP/抓取/提取/地图/爬取/深度研究（25+ 工具） | 托管 Streamable-HTTP MCP，`npx novada-mcp` | 免费 1,000 次/月 | 🥈 备选 | 新兴 SaaS，免安装，覆盖 195 国；长期可用性待观察 |
-| Novada Web Unblocker | 住宅代理 / 反爬解锁，抓取地理封锁 / 反 bot 受保护的页面 | 代理网关（用户名+密码，或 `NOVADA_API_KEY`）| 付费（按流量）| 🛟 兜底（解锁层）| 与 Firecrawl 反爬能力部分重叠；Firecrawl 已覆盖多数解锁场景。仅作「Firecrawl/WebFetch 仍被墙」的兜底解锁层，不进核心管线；key 本地仅存 |
-| SearXNG | 元搜索引擎（多引擎聚合） | 自托管实例 / 公共实例 MCP | 免费、免 key（自托管） | 🛟 兜底（自托管 keyless） | 元搜索聚合；需自托管或可信公共实例 |
-| Perplexity Sonar | 带引用一站式答案 | API key 直调 | 无永久免费层；Pro 订阅含 $5/月 API 额度 | 🎯 个性化 | 答案质量高，成本随 token 叠加；非纯免费场景 |
-| ModelScope 魔塔 | 中文模型/数据集/推理 | API token 直调 | 2,000 次/天（需阿里云账号 + 实名认证） | 🎯 个性化 | 国内首选；适合 Qwen/DeepSeek 等中文模型推理 |
-| AnySearch | 统一实时搜索（23 垂直领域） | 远程 MCP `https://api.anysearch.com/mcp`（keyless 匿名）或 API key | 匿名 1,000 次/天；免费 key 更高 | 🎯 个性化 | 新兴工具，垂直领域有特色；质量稳定性待验证。**⚠️ 已评估：与 exa/tavily/firecrawl 通用搜索高度重叠，不进核心管线；本地未装 skill（仅存 anysearchAPIKEY.txt），仅作匿名兜底可选** |
-| 秘塔搜索 Metaso | 中文 AI 搜索 / 学术搜索 | Web 免费；API 按次计费 | Web 搜索免费；API 约 ¥0.03/次，新用户 50 次试用 | 🎯 个性化 | 中文搜索体验好；API 非免费，轻量 CN 增强 |
-| Connected Papers | 论文关联图谱 / 引文网络（S2 ShaID → 研究邻里图） | API key（`connectedpapers-py` 客户端）| 早期访问，限量（用户 key 余 ~50 次图谱构建，5 次/分钟）| 🎯 个性化 | 与 dmr 既有 S2/OpenAlex 引文覆盖重叠；仅作深度技术尽调可选源，**不进核心管线**；key 本地仅存 |
-| FRED（美联储经济数据） | 美国经济/金融**结构化时间序列**（GDP/CPI/利率/就业/M2 等 80 万+ 系列） | API key 直调 `api.stlouisfed.org`（或 `scripts/fred_query.py`）| 免费、官方、无限额（需免费 api_key）| 🥈 备选【建议采纳】 | 官方权威宏观数据源，补 dmr **结构化经济数据空白**（exa/tavily 是搜索、非结构化）；免费稳定，强烈建议作为金融/经济深度研究核心可选源；不进核心管线（主流程零依赖），作增强层 |
-| ReadGZH-Agent | 微信公众号**全文**提取（标题/作者/时间/正文 Markdown，50–87% Token 压缩） | 远程 MCP `https://api.readgzh.site/mcp-server`（keyless；Pro 需 Bearer） | 30 次/日免费（注册领取）；Pro ¥39/月 2000 次 | 🥇 首选（公众号全文） | 99.89% 反爬穿透、零安装、永久缓存；与 `wechat-article-search` **互补**（后者只搜元数据，本工具提全文）。缺失→回退 web_search。文章全球共享缓存，勿提交私密链接；AGPL-3.0（自托管须开源）；国内访问需实测 |
-| midu-hotsearch | 抖音/微博/百度/知乎/今日头条等 **30+ 平台热搜/榜单** | WorkBuddy 技能市场安装（原生 skill） | 免费（但新版蜜度 API 已不兼容）| ❌ **已弃用** | **新版 midu.com 蜜度 API 改用 OAuth（client_id+client_secret→token）且需付费/申请接口权限**，与原 skill 单 key 鉴权不兼容；剩余权限 0 + 错误码 202005/203003 双重卡死。**替代见 § 2.y**：抖音热榜用 `douyinmcp.get_homefeed`（已 8/8 活）、财经热榜用 wallstreetcn（免费无 key）、综合用 web_search+zhihu MCP。不进核心管线 |
-| douyinmcp | 抖音**深度内容 + 热榜**（搜索/视频详情/评论/用户/首页流 + `get_homefeed`） | 本地 MCP（需 `cookies.txt` 登录 Cookie + `a_bogus` 本地 V8 签名） | 免费（需自维护 Cookie） | 🎯 个性化（抖音深度 + 热榜） | 本地 `py_mini_racer` 生成 `a_bogus` 签名，免外部签名服务；需有效抖音登录 Cookie（频繁失效）+ Python 3.14+/uv。Cookie 含敏感信息，只存本地，绝不进云端。**优先免费方案**；规模化稳定需求见 TikHub。**🆕 `get_homefeed` 工具可作抖音实时热榜信号源（已 8/8 工具激活，替代 midu 的抖音维度）** |
-| wallstreetcn（华尔街见闻） | **实时财经热榜/要闻/快讯**（A股/美股/港股/全球/外汇/黄金/原油/数字货币等 5+ 频道） | REST API `https://api-one.wallstcn.com/apiv1/content/{articles,lives,hots,hot-rank}?channel=...&limit=...` | 免费、免 key、无频率声明 | 🛟 兜底（财经热榜信号）| 2026-07 实测 5 频道 + 4 端点全 HTTP 200，实时数据（文章/快讯/热榜）。**替代 midu-hotsearch 的金融维度**，中文财经研究首选；与 douyinmcp 互补（抖音用 douyinmcp、财经用本源）。不进核心管线 |
-| TikHub API | 微信+抖音**结构化数据**（公众号文章+阅读数/赞/评论；抖音视频/评论/搜索/榜单/星图） | REST API（`api.tikhub.io`，大陆用 `api.tikhub.dev`） | $0.001/请求（首充 $0.05≈50 次） | 🎯 个性化（稳定契约） | 付费但稳定（99.9% SLA，10 RPS），免中国开发者资质；主域大陆被墙→用 `.dev`。key 本地仅存。**优先用免费 douyinmcp/ReadGZH**，规模化/高稳定需求再上 TikHub |
-
-### 1.3 不推荐 / 仅特定场景
-
-| 工具 | 推荐层级 | 原因 |
-|------|----------|------|
-| GPT Researcher（本地进程） | ⚠️ 不推荐通用 | 需 git clone + pip install + 多 API key，依赖重、启动慢；仅高级用户在独立 venv/容器部署 |
-| local-deep-researcher / local-deep-research | ⚠️ 不推荐通用 | 依赖本地 Ollama/LMStudio，与"零本地、泛化优先"定位冲突；仅涉密/离线场景单独考虑 |
-| agent-browser | 🎯 平台专有（已评估） | WorkBuddy 专有浏览器自动化。**抓取/JS 渲染能力与 Firecrawl 重叠且更重**（需 Chromium 500MB+GUI daemon、冷启慢、非无头）。dmr 场景下 Firecrawl 更优 → **不进核心管线**，仅保留为「需登录/点击/表单的交互式高墙源」最后兜底 |
-| agent-reach | 🎯 平台专有（已评估·建议采纳为可选社媒层） | WorkBuddy 专有 15 频道聚合（实测 **6 社媒**：Twitter/X·Reddit·Facebook·Instagram·Bilibili·小红书 + **5 基础**：GitHub·V2EX·RSS·Web·YouTube + **3 可选未装**：小宇宙·雪球·LinkedIn）。**覆盖 8 个 MCP + 默认层均未触及的社媒/草根另类数据**，对深度市场研究情绪/趋势信号价值高 → 建议采纳为可选社交/UGC 增强层。注意：(a) 默认 `disable:true`，需改元数据 `disable:false` 并 `agent-reach doctor` 配置频道；(b) 其 Exa/web 频道与现有 exa/tavily/firecrawl 冗余——只取其社媒频道；(c) 社媒频道经 **OpenCLI 浏览器桥**复用 Chrome 登录态（无需导 cookie / 关浏览器；Windows 需修 `localhost`→IPv4 解析，见 2.1.1）；(d) **抖音/微博 非 agent-reach 频道**——走默认 web_search 兜底；**公众号走 wechat-article-search skill**（非 agent-reach）；(e) 不进核心管线 |
-
-
----
+| 能力 | 可选工具 | 路由约束 |
+|---|---|---|
+| 广域搜索 / 索引补充 | Exa、Octen、Metaso、Bocha、Tavily Search、SerpAPI、Search1API、AnySearch | 每个查询簇默认一个；Search1API 是网关 / 引擎回退，不按兼容端点重复计源；AnySearch 保持试点。 |
+| 专业证据 | SEC、FRED、学术 API、专利 / 法律数据库、GitHub API / MCP、平台原生数据 | 按必需证据域直接查询，可与广域发现并行。 |
+| 正文提取 / 站点采集 | Firecrawl、Tavily Extract / Crawl / Map、Exa Contents、ReadGZH | 先有 URL 或明确站点采集需求；同一内容任务先选一个提取器。 |
+| 动态页面 / 研究代理 | TinyFish、Tavily Research、Perplexity Agent | 需要浏览器交互或多步综合时再启用；每个研究任务最多一个研究代理。 |
+| 工具聚合 | AgentKey；AgentEarth（观察） | 默认关闭；直连来源不足时才考虑，调用前核对上游、费用和数据流向。 |
+| 社媒 / UGC | agent-reach、知乎 MCP、平台专用工具 | 仅在用户体验、社区反馈或情绪信号是必需证据域时启用；不替代 T1 官方证据。 |
 
 ## 2. 平台接入速查
 
@@ -110,7 +68,7 @@
 
 **实测结果（2026-07-23）**：Twitter/Reddit/Facebook/Instagram/Bilibili/小红书 全部返回真实数据；doctor 终态 `10/15 渠道可用`（5 基础 + 6 社媒）。
 
-**注意**：抖音/公众号 agent-reach **无独立频道**（可选频道仅 twitter/reddit/facebook/instagram/小红书/小宇宙/雪球/LinkedIn/bilibili），其内容由 exa/tavily/firecrawl 通用检索覆盖，不构成硬缺口。
+**注意**：抖音/公众号 agent-reach **无独立频道**（可选频道仅 twitter/reddit/facebook/instagram/小红书/小宇宙/雪球/LinkedIn/bilibili）。抖音按任务使用平台专用工具或广域搜索；公众号必须先通过发现渠道取得原文 URL，再用 ReadGZH 提取正文。不要把“搜索引擎命中公众号页面”误记为已取得全文。
 
 **同类方案评估记录 · karnstack/reins（2026-08-29 核验）**：
 - 基本情况：MIT 许可；npm 包 `@karnstack/reins`（latest 0.4.0，维护者 karngyan，首发 2026-07-04）；支持 Chrome/Brave/Edge/Arc/Dia；README 明示 127.0.0.1-only 绑定 + 逐站点权限 + 威胁模型文档（"Host 头校验防 DNS rebinding"与"仅接受 chrome-extension:// 来源"两项机制未见于 README，标注为文档声称、未核验）。

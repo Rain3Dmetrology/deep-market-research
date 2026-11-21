@@ -105,15 +105,12 @@ metadata:
 |  搜索策略: 第一段宏观锚定(市场规模/CAGR/政策)            |
 |           第二段产业链解剖(上下游利润分配/玩家格局/卡脖子) |
 |           第三段趋势预测与避坑(红利/颠覆技术/失败案例/反向)|
-|  搜索入口(单 owner 升级链, 允许证据域并行):                      |
-|    每个研究步骤默认只用 1 个通用搜索 owner；内置 WebSearch 默认； |
-|    结果不足/需交叉验证时再升级 Exa/TinyFish；整站/复杂抓取用     |
-|    Firecrawl；一次性多源综合可选 Tavily Research。               |
-|    例外(可并行): 专业证据域(专利/法律/财务/学术/UGC)与通用搜索   |
-|    不属于重复调用，可同步跑；CN 与 Global 按目标市场选择可并行。  |
-|    优先级与去重: 内置搜索 > 直连工具 > 聚合器--聚合器(如 AgentKey)|
-|    仅在对应直连工具不可用、或用户显式开启时使用；同一路由内       |
-|    不重复调用功能等价的工具。                                     |
+|  搜索路由(完整规则见 references/data-sources.md):                    |
+|    按目标市场 × 证据域分类，不按提问语言机械分 CN/Global。           |
+|    每个广域查询簇默认一个 owner；仅在明确证据缺口时增加第二个。      |
+|    官方/学术/专利/法律/财务/GitHub/UGC 等必需证据域可以并行。        |
+|    已知 URL 用一个提取器；多步综合或浏览器交互按需选一个执行器。    |
+|    AgentKey 等聚合器默认关闭；直连能力不足且获授权后才使用。        |
 |  专业数据库: 通达信(A股F10) 智慧芽(专利) 自选股/westock(财报) |
 |             威科/元典/北大法宝(法律) 天眼查/企查查/启信慧眼(工商)|
 |             GitHub(gh CLI+web,Trending) ima(知识库)/notion              |
@@ -302,35 +299,18 @@ metadata:
 ## 五、工具分层（默认零依赖，可选工具按平台接入）
 
 > **默认层（零安装）**：LLM 内置 `web_search` / `web_fetch` + 免费 REST API（OpenAlex 等）；主力入口，不依赖 MCP / 本地进程。
-> **可选增强层（缺失则优雅跳过，非质量必需）**：Exa / TinyFish / Firecrawl / Tavily Research / DeepWiki / Brave / Perplexity / 秘塔 / AnySearch / ModelScope / SearXNG / Novada 等按平台接入。各平台接入见 **references/cross-platform-tools.md**。
+> **可选增强层（缺失则优雅跳过，非质量必需）**：按需接入广域发现、专业证据、正文提取、研究代理或平台工具。能力分类与调用条件见 **references/data-sources.md**；平台配置见 **references/cross-platform-tools.md**。
 > **Harness v2 路由纪律**：一次检索步骤只选一个通用搜索 owner；内置 WebSearch 默认，结果不足/时效性存疑/用户明确要求交叉验证时才启用第二索引。专业数据库/API 不算重复搜索。不要为了“探测是否可用”而调用工具。
 
-| 步骤 | 默认层（零依赖，所有平台通用） | 可选增强层（按平台接入，缺失则跳过） |
-|------|----------------|-------------------------------|
-| 搜索入口 | 内置 `web_search` / `web_fetch` + 免费 REST API | Exa（难搜/语义）/ TinyFish（第二索引/浏览器）/ Firecrawl（crawl/scrape/interact）/ Tavily Research（一次性多源综合）/ DeepWiki（GitHub 专项）/ 其他按需兜底 |
-| 社媒/热评 | `web_search` 通用社媒 + WebFetch | agent-reach / agent-browser；UGC 仅作 T4 信号 |
-| 专利 | WebSearch 公开库（Google Patents / USPTO / EPO / WIPO） | patsnap-search MCP |
-| 财经/财报 | WebSearch 公司官网 / 财报 / 财经媒体 | westock-mcp / tdx-connector MCP + markitdown |
-| 企业工商/风险 | WebSearch 工商/司法公开信息 | tyc-mcp / qcc-company / qixinhuiyan-mcp |
-| 法律/合规 | WebSearch 法规/裁判文书公开信息 | wk-workbuddy / yuandian-mcp / pkulaw |
-| 代码/项目 | WebSearch + WebFetch GitHub Trending / Hugging Face | DeepWiki（keyless）/ github MCP + gh CLI |
-| 学术论文 | WebFetch 直调：OpenAlex / Semantic Scholar / arXiv / PubMed / bioRxiv / EMBL-EBI | -- |
-| 引文溯源 | WebFetch 直调：Crossref / OpenCitations | -- |
-| 科研数据仓库 | WebFetch 直调：Zenodo / Figshare / Harvard Dataverse / NASA | -- |
-| 知乎 | WebSearch 知乎 | zhihu MCP |
-| AI 搜索 | 内置 `web_search`（带引用优先） | Perplexity / Tavily / AnySearch / 秘塔搜索 |
-| 微信公众账号文章 | WebSearch 公众号文章 | wechat-article-search skill + ReadGZH-Agent MCP |
-| 抖音 | WebSearch 抖音 | douyinmcp MCP / TikHub API |
-| 宏观经济 | WebSearch（Trading Economics / FRED / 统计局 / 央行） | -- |
-| AI 模型/数据集 | Hugging Face Hub API（免费）/ ModelScope web | ModelScope MCP |
-| 开放百科 | WebSearch（Wikipedia / 百度百科） | -- |
-| 产品/创投 | WebSearch + WebFetch（Product Hunt / TechCrunch / 36氪） | agent-reach |
-| 开发者社区 | WebSearch（Stack Overflow / HN / Reddit / CSDN） | agent-reach |
-| 知识库 | -- | ima-mcp / notion / Obsidian / 本地 wiki |
-| 文档净化 | WebFetch 原文 + LLM 提取 | markitdown（PDF/Word->Markdown） |
-| 交叉验证 | 本工作流内 LLM 比对 | -- |
-| URL 验活 | WebSearch 重新索引 / WebFetch HEAD | web-access |
-| 长报告分块 | 输出 >4k tokens 时按板块分块生成后 LLM 拼接 | -- |
+| 能力 | 路由规则 | 目录 |
+|------|----------|------|
+| 广域发现 | 默认一个 owner；结果不足或有独立交叉发现需求时再扩源 | references/data-sources.md |
+| 专业证据 | 按任务需要直接查询官方、学术、专利、法律、财务、GitHub 或 UGC 来源，可并行 | references/data-sources.md |
+| 正文提取 / 站点采集 | 已知 URL 或明确站点采集需求时，选择一个提取器 | references/data-sources.md |
+| 研究代理 / 浏览器执行 | 需要多步综合或交互页面时，按需选择一个执行器 | references/data-sources.md |
+| 工具聚合 | 默认关闭；直连能力不足并获授权后才触发 | references/data-sources.md |
+
+**平台接入步骤**仅见 references/cross-platform-tools.md，本节不复制 Provider 排名或安装细节。
 
 > 降级原则：默认层失败 -> 换另一默认源；可选层未连/无 key -> 跳过并注明"未覆盖该维度"，绝不阻断 Step 0-8 主管线。
 > **路由不打包**：dmr 主管线只做"源路由 + 优雅降级"，不复制 / 捆绑任何可选工具的实现。

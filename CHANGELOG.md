@@ -9,6 +9,8 @@
 - **质量环缺陷驱动**：标准版默认 1 轮审计，发现实质缺陷或深度尽调才追加；专项检查按风险选择，不强制默认并行多个 critic；逐章审稿最多 2 轮且不"强制通过"，未解决问题显式列入遗留问题。
 - **知识库沉淀改为默认关闭**：仅在用户明确要求或 workspace 已定义持久化流程时写入；启用时保留实体级证据缓存表，重跑同主题且存在历史 note 时才强制预读，无历史 note 不视为违规。
 - **删除可选工具 try-and-skip 探测式调用**：只有任务命中独特能力且已知可用时才调用，失败后再优雅降级。
+- **搜索路由与来源分类收敛**：以 references/data-sources.md 作为唯一能力目录，明确单广域 owner、缺口驱动扩源、专业证据域并行；分离 Search、Extract/Crawl、Research Agent、Browser 与 Aggregator，删除跨平台文档中的默认并行冲突。
+- **健康探针安全口径修正**：移除认证参数 URL，未实现 POST/Header 适配器的认证 REST 源改为 custom/SKIPPED；明确探针登记表不是路由目录，避免 GET 探针伪报 Provider 健康。
 
 ### Fixed
 - `source_health.py` parity：deprecated registry tombstone 只参与"禁止重新激活"检查，不再被误报为 blind/orphan（单一真源 `deprecated_keys`，兼容远端 `s_deprecated` 消费点）。
