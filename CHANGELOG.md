@@ -11,6 +11,7 @@
 - **删除可选工具 try-and-skip 探测式调用**：只有任务命中独特能力且已知可用时才调用，失败后再优雅降级。
 - **搜索路由与来源分类收敛**：以 references/data-sources.md 作为唯一能力目录，明确单广域 owner、缺口驱动扩源、专业证据域并行；分离 Search、Extract/Crawl、Research Agent、Browser 与 Aggregator，删除跨平台文档中的默认并行冲突。
 - **健康探针安全口径修正**：移除认证参数 URL，未实现 POST/Header 适配器的认证 REST 源改为 custom/SKIPPED；明确探针登记表不是路由目录，避免 GET 探针伪报 Provider 健康。
+- **新增 CN / Global 搜索 Provider Pilot 基准**：固定 8 个查询、4 个候选、16 次首轮请求上限；分别评估相关性、金标准一手来源召回、独立发布者增量、重复率、时效、延迟、成本和失败降级。新增离线 JSONL 评估脚本与合成回归测试，不调用 Provider、不自动选出赢家。
 
 ### Fixed
 - `source_health.py` parity：deprecated registry tombstone 只参与"禁止重新激活"检查，不再被误报为 blind/orphan（单一真源 `deprecated_keys`，兼容远端 `s_deprecated` 消费点）。
