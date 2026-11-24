@@ -1,0 +1,151 @@
+schema_version: 1
+benchmark_id: dmr-search-provider-cn-global-pilot-2026-11
+status: pilot_spec
+as_of_date: "2026-11-22"
+purpose: >
+  Compare broad-search retrieval quality for the current CN and Global primary candidates.
+  This benchmark evaluates search retrieval only, not end-to-end report quality.
+execution:
+  result_limit: 10
+  repetitions: 1
+  retry_limit: 0
+  broad_search: false
+  full_content: false
+  extraction_calls: false
+  research_agents: false
+  total_expected_search_requests: 16
+  requests_per_provider: 4
+  providers_by_market:
+    CN:
+      - metaso_web
+      - bocha_web
+    Global:
+      - octen_search
+      - exa_search
+  request_contract:
+    same_query_text_for_market_pair: true
+    same_result_limit: true
+    no_domain_filters: true
+    no_full_content: true
+    no_broad_or_research_agent: true
+    record_provider_native_filters: true
+    record_requested_at_utc: true
+  cost_policy:
+    unknown_is_not_zero: true
+    actual_usage_record_required: true
+    subscription_included_usage_is_not_free: true
+    no_live_calls_without_per_provider_authorization: true
+providers:
+  metaso_web:
+    market: CN
+    role: broad_discovery
+    product: webpage
+    adapter: provider_specific_webpage_search
+  bocha_web:
+    market: CN
+    role: broad_discovery
+    product: web_search
+    adapter: provider_specific_web_search
+  octen_search:
+    market: Global
+    role: broad_discovery
+    product: search
+    adapter: mcp__Octen__search
+  exa_search:
+    market: Global
+    role: broad_discovery
+    product: search
+    adapter: mcp__Exa__web_search_exa
+queries:
+  - id: CN-01
+    market: CN
+    language: zh
+    task: vendor_landscape
+    query: "中国工业3D机器视觉检测厂商，重点锂电池、电芯、3C玻璃、高反光金属表面检测；比较3D相机、线激光轮廓、结构光产品与实际行业应用，优先厂商官方产品页和案例。"
+    expected_targets:
+      - id: hikrobotics_3d
+        domain: hikrobotics.com
+      - id: opt_3d
+        domain: optmv.com
+      - id: mech_mind_3d
+        domain: mech-mind.com
+    freshness_days: null
+    notes: "检查中文召回、厂商覆盖与官方产品来源；品牌提及不能代替官方来源。"
+  - id: CN-02
+    market: CN
+    language: zh
+    task: official_product_spec
+    query: "OPT-LPE2-007-01 3D线激光相机官方参数：Z轴重复精度、Z轴量程、X轴轮廓点数、采样速度、HDR和光源波长。"
+    expected_targets:
+      - id: opt_lpe2_007_official
+        url: "https://www.optmv.com/content/details187_357603.html"
+    freshness_days: null
+    notes: "精确型号检索；必须命中 OPT 官方产品页，转载参数表不能替代。"
+  - id: CN-03
+    market: CN
+    language: zh
+    task: technical_research_and_patent
+    query: "高反光金属表面、镜面与透明玻璃的工业3D形貌测量：条纹投影、相位测量偏折、激光三角测量的局限、校准方法、误差补偿；查找中国专利和可核验学术论文原文。"
+    expected_targets: []
+    freshness_days: null
+    notes: "本题没有预设单一金标准；人工核验专利原文、论文元数据、摘要与全文，防止把摘要当全文。"
+  - id: CN-04
+    market: CN
+    language: zh
+    task: recent_product_release
+    query: "2025-11-22至2026-11-22中国工业3D视觉相机新产品发布、产品目录更新和规格升级；优先查找海康机器人、奥普特及其他厂商的原始公告和下载资料。"
+    expected_targets:
+      - id: opt_2025_3d_camera_release
+        url: "https://www.optmv.com/content/details81_372303.html"
+      - id: hikrobotics_2026_catalog
+        domain: hikrobotics.com
+    freshness_days: 365
+    notes: "检查发布时间与事件发生时间，不能把抓取日期或网页更新时间冒充发布日期。"
+  - id: GL-01
+    market: Global
+    language: en
+    task: vendor_landscape
+    query: "Industrial 3D machine vision inspection vendors for battery cells, reflective metal, specular surfaces and glass: compare laser profilers, structured-light cameras and 3D area-scan systems; prioritize official product pages and application cases."
+    expected_targets:
+      - id: keyence_3d
+        domain: keyence.com
+      - id: cognex_3d
+        domain: cognex.com
+      - id: mech_mind_3d
+        domain: mech-mind.com
+      - id: lmi_3d
+        domain: lmi3d.com
+    freshness_days: null
+    notes: "检查全球厂商覆盖，不能因为查询语言或 provider 默认地区而局限在单一市场。"
+  - id: GL-02
+    market: Global
+    language: en
+    task: official_product_spec
+    query: "KEYENCE LJ-X8000 Series 2D/3D laser profiler official specifications: measurement range, repeatability, sampling speed, wavelength and HDR; compare with Cognex 3D-A5000 official documentation."
+    expected_targets:
+      - id: keyence_ljx_specs
+        url: "https://www.keyence.com/products/measure/laser-2d/lj-x8000/specs/"
+      - id: cognex_3da5000_support
+        url: "https://support.cognex.com/en/products/3d-a5000"
+    freshness_days: null
+    notes: "要求直接命中制造商规格或支持页，不以经销商文章替代。"
+  - id: GL-03
+    market: Global
+    language: en
+    task: technical_research
+    query: "Peer-reviewed research on 3D metrology of composite diffuse and specular surfaces, including fringe projection profilometry, phase measuring deflectometry, calibration and error compensation; return DOI and original publisher pages."
+    expected_targets:
+      - id: specular_composite_metrology_2026
+        url: "https://www.sciencedirect.com/science/article/abs/pii/S0143816626000679"
+      - id: metrology_review_2026
+        url: "https://doi.org/10.3390/metrology6010003"
+    freshness_days: null
+    notes: "核对作者、DOI、出版日期、期刊和论文状态；预印本不能无标识替代同行评审版本。"
+  - id: GL-04
+    market: Global
+    language: en
+    task: field_limitations_and_negative_evidence
+    query: "Industrial 3D inspection of shiny metal, mirror-like and transparent surfaces: real deployment limitations, missing data, multipath reflections, calibration drift, false measurements and failure cases; include technical forums and independent application reports, not vendor marketing only."
+    expected_targets: []
+    freshness_days: 365
+    notes: "不设固定域名金标准；人工判断相关性、发布者独立性、具体失效细节和证据等级，UGC通常为T4。"

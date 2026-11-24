@@ -22,7 +22,7 @@ A：按查询意图路由：行业赛道 -> 模板 B（含销售触发词时必�
 
 **Q4：需要付费 API key 或本地安装吗？**
 
-A：**都不需要**。本技能默认零依赖、零安装--只用 LLM 内置 `web_search` / `web_fetch` + 免费公开 REST API（OpenAlex / Semantic Scholar / Crossref / arXiv / PubMed 等无需 key）。Exa / Firecrawl / Tavily / Perplexity / GPT Researcher / ModelScope 等是**可选增强**：有 key 且平台支持才启用，无则优雅跳过，质量不降。一份 SKILL.md 即可在 WorkBuddy / Claude / Codex / Trae / qoder / Cursor 等任意平台使用，无需改代码。各平台可选工具接入方式见 references/cross-platform-tools.md。
+A：**都不需要**。本技能默认零依赖、零安装--只用 LLM 内置 `web_search` / `web_fetch` + 免费公开 REST API（OpenAlex / Semantic Scholar / Crossref / arXiv / PubMed 等无需 key）。Exa / TinyFish / Firecrawl / Tavily Research / Perplexity / GPT Researcher / ModelScope 等是**可选增强**：仅在任务命中其独特能力时调用，不为探测可用性而调用，也不默认多路并行；缺失或失败时优雅降级。各平台可选工具接入方式见 references/cross-platform-tools.md。
 
 ---
 
@@ -34,13 +34,13 @@ A：不随机选、不多数暴力。按源层级（T1>T2>T3>T4）、时效（�
 
 **Q6：报告会不会太长？**
 
-A：默认跑完整 Step 0-8；用户要"快版"时至少保留 Step1 + Step4 + Step8，并在报告注明"快版，未全覆盖质量环"。模板 B / C 强制非散文元素（矩阵 / 图表 / 清单），避免纯散文堆字。
+A：按复杂度分层。普通单点事实/简单对比不进入本 Skill；快版至少保留 Step1 + Step4 + Step8；标准版只执行 Step 0-8 中与任务相关的步骤；明确深度调研/尽调才运行完整 Step 0-8 + 质量环。模板 B / C 仍优先使用矩阵 / 图表 / 清单等高信息密度表达。
 
 ---
 
 **Q7：增量知识沉淀一定要用 ima 吗？**
 
-A：ima-mcp 是首选，notion / Obsidian / 本地 wiki / 任意知识库均可；关键是三层结构（raw / wiki / schema）+ 重跑 Lint。不强制。
+A：不强制，而且默认不写入。只有用户明确要求，或当前 workspace 已定义持久化流程时才沉淀；启用后可用 ima / notion / Obsidian / 本地 wiki，继续采用 raw / wiki / schema 三层结构 + 重跑 Lint。
 
 ---
 

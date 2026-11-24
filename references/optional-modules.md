@@ -18,7 +18,7 @@
 | **deep-research**（v2.2.1 已永久删除，方法论已吸收）| 命令式入口（`/research`->outline->`/research-deep`并行->`/research-report`）；outline + 并行 per-item 搜索模式；学术/基准/技术选型/尽调模式->第 4 模板 | 不替换确定性 Step0->8 + 三级模板 |
 | **agent-reach** | 补齐 UGC 平台覆盖（实测 6 社媒：X/Reddit/Facebook/Instagram/B站/小红书 + 5 基础：GitHub/V2EX/RSS/Web/YouTube + 3 可选：小宇宙/雪球/LinkedIn；**抖音/微博 走 web_search 兜底，公众号走 wechat-article-search skill，非 agent-reach 频道**） | 不引入其安装/代理复杂度；dmr 仅引用 |
 | **wechat-article-search** | 新增"公众号**文章**检索"为具体中文信号源（补 UGC 评论之外的文章级缺口） | 不复制其 node 依赖规则 |
-| **perplexity**（v2.2.1 已永久删除，方法论已吸收）| 注册为可选 AI 搜索源（仅当 `PERPLEXITY_API_KEY` 存在） | 不作强制入口，仍以 Tavily/WebSearch 为主 |
+| **perplexity**（v2.2.1 已永久删除，方法论已吸收）| 注册为可选 AI 搜索源（仅当 `PERPLEXITY_API_KEY` 存在） | 不作强制入口；仅在当前单 owner 路由命中其带引用综合能力时使用 |
 | **academic-research-hub**（v2.2.1 已永久删除，方法论已吸收）| 多源学术检索（arXiv/PubMed/Semantic Scholar/Google Scholar）+ 引文处理（BibTeX/RIS/JSON）作学术模块 | 其 OpenClawCLI 硬依赖；**许可 Proprietary**--嵌入脚本前须确认再分发权 |
 | **literature-search** | 范围澄清步骤；学术源访问伦理；按引用数+时效去重；严格 `作者.题名.出处.年.DOI/URL` 引文格式 | 不重复实现去重（本流程已有） |
 
@@ -100,7 +100,7 @@
 
 ## 6. Perplexity AI 搜索（可选源）
 
-当 `PERPLEXITY_API_KEY` 存在时，可将 Perplexity 作为带引用的 AI 搜索入口之一，与 Tavily/WebSearch 并列（不强制、不作唯一入口）。无 key 时优雅跳过。
+当 `PERPLEXITY_API_KEY` 存在时，可将 Perplexity 作为带引用的 AI 搜索 owner 候选之一；仅在当前任务需要其综合能力时选择，不与其他通用搜索器默认并行。无 key 时优雅跳过。
 
 ---
 
