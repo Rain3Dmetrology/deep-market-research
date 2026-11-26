@@ -20,11 +20,18 @@ $SkillVersion = (Select-String -Path (Join-Path $Src "SKILL.md") -Pattern '^vers
 Write-Host "Installing deep-market-research v$SkillVersion"
 
 $Critical = @('SKILL.md','references\parameter-card-schema.md','references\run-contract.md','references\data-sources.md','scripts\evidence_contract.py','scripts\validate_param_card.py','scripts\run_contract.py','scripts\evaluate_search_benchmark.py','benchmarks\search-provider-baseline.yaml')
+# Avoid relying on PowerShell module autoload in minimal or isolated hosts.
+function Get-SkillHash($path) {
+  $sha = [System.Security.Cryptography.SHA256]::Create()
+  $stream = [System.IO.File]::OpenRead($path)
+  try { return [System.BitConverter]::ToString($sha.ComputeHash($stream)) }
+  finally { $stream.Dispose(); $sha.Dispose() }
+}
 function Test-SkillCopy($dest) {
   foreach ($rel in $Critical) {
     $source = Join-Path $Src $rel
     $copy = Join-Path $dest $rel
-    if (-not (Test-Path -LiteralPath $copy -PathType Leaf) -or (Get-FileHash -LiteralPath $source).Hash -ne (Get-FileHash -LiteralPath $copy).Hash) {
+    if (-not (Test-Path -LiteralPath $copy -PathType Leaf) -or (Get-SkillHash $source) -ne (Get-SkillHash $copy)) {
       Write-Host "FAIL: $dest/$rel missing or drifted"; return $false
     }
   }
