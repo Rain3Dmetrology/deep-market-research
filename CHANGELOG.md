@@ -1,5 +1,9 @@
 ﻿# Changelog
 
+## [2.9.1] - 2026-11-26
+
+- P0 candidate: Evidence Contract v1, Run Contract v1, snapshot verification and missing-pair guards, compatibility checks. Unreleased; no live provider calls.
+
 ## [2.9.0] - 2026-11-20
 
 ### Changed（Harness v2 治理规则回流，基于远端 2.8.0 能力底座）

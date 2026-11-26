@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import math
 import re
@@ -145,7 +146,40 @@ def _load_records(path: Path) -> list[dict[str, Any]]:
     return records
 
 
-def validate_records(records: list[dict[str, Any]], baseline: dict[str, Any]) -> None:
+def preflight_request(provider_id, query_id, query_text, result_limit, baseline=None):
+    """Call before dispatch: validate frozen provider/market/query/limit."""
+    baseline = baseline or load_baseline()
+    provider = baseline["providers"].get(provider_id)
+    query = next((q for q in baseline["queries"] if q["id"] == query_id), None)
+    if provider is None or query is None or provider["market"] != query["market"]:
+        raise ValueError(f"Provider/query market mismatch: {(provider_id, query_id)}")
+    if query_text != query["query"]:
+        raise ValueError("query_text must exactly match the frozen baseline")
+    if result_limit != baseline["execution"]["result_limit"]:
+        raise ValueError("result_limit must match the frozen baseline")
+
+
+def verify_snapshot(record, snapshot_root):
+    """Verify bytes under the supplied snapshot root, not arbitrary paths."""
+    path = record.get("raw_results_path")
+    digest = record.get("raw_results_sha256")
+    if snapshot_root is None or not isinstance(path, str) or not path.strip():
+        raise ValueError("raw_results_path and snapshot_root required")
+    root = Path(snapshot_root).resolve(strict=True)
+    relative = Path(path)
+    if relative.is_absolute() or relative.drive or ".." in relative.parts:
+        raise ValueError("unsafe raw_results_path")
+    resolved = (root / relative).resolve(strict=True)
+    if not resolved.is_relative_to(root) or not resolved.is_file():
+        raise ValueError("raw_results_path outside snapshot root or not a file")
+    with resolved.open("rb") as stream:
+        computed = hashlib.file_digest(stream, "sha256").hexdigest()
+    if computed != digest:
+        raise ValueError("raw_results_sha256 mismatch")
+    return resolved
+
+
+def validate_records(records: list[dict[str, Any]], baseline: dict[str, Any], snapshot_root=None) -> None:
     providers = baseline["providers"]
     queries = {item["id"]: item for item in baseline["queries"]}
     expected = {
@@ -156,6 +190,7 @@ def validate_records(records: list[dict[str, Any]], baseline: dict[str, Any]) ->
     }
     seen = set()
     run_ids = set()
+    snapshots = set()
 
     for record in records:
         _reject_sensitive_fields(record)
@@ -178,8 +213,7 @@ def validate_records(records: list[dict[str, Any]], baseline: dict[str, Any]) ->
         run_ids.add(run_id)
         _parse_timestamp(record.get("requested_at"), f"{pair}.requested_at")
 
-        if record.get("query_text") != queries[query_id]["query"]:
-            raise ValueError(f"{pair}: query_text must exactly match the frozen baseline")
+        preflight_request(provider_id, query_id, record.get("query_text"), record.get("result_limit"), baseline)
         if not isinstance(record.get("provider_parameters"), dict):
             raise ValueError(f"{pair}: provider_parameters must be a non-sensitive mapping")
         snapshot_hash = record.get("raw_results_sha256")
@@ -188,6 +222,16 @@ def validate_records(records: list[dict[str, Any]], baseline: dict[str, Any]) ->
                 raise ValueError(f"{pair}: successful requests require raw_results_sha256 (64 lowercase hex chars)")
         elif snapshot_hash is not None and not re.fullmatch(r"[0-9a-f]{64}", str(snapshot_hash)):
             raise ValueError(f"{pair}: raw_results_sha256 must be null or a 64-character SHA-256")
+        if snapshot_hash is not None:
+            try:
+                snapshot = verify_snapshot(record, snapshot_root)
+            except OSError as exc:
+                raise ValueError(f"{pair}: snapshot missing or unreadable") from exc
+            if snapshot in snapshots:
+                raise ValueError(f"{pair}: snapshot path reused across requests")
+            snapshots.add(snapshot)
+        elif record.get("raw_results_path") is not None:
+            raise ValueError(f"{pair}: snapshot path without hash")
         if record.get("request_status") not in {"success", "failed", "skipped"}:
             raise ValueError(f"{pair}: invalid request_status")
         if record.get("result_limit") != baseline["execution"]["result_limit"]:
@@ -293,9 +337,9 @@ def _cost_summary(records: list[dict[str, Any]]) -> dict[str, Any]:
     return {"status": "unknown_or_mixed", "amount": None, "currency": None}
 
 
-def evaluate(records: list[dict[str, Any]], baseline: dict[str, Any] | None = None) -> dict[str, Any]:
+def evaluate(records: list[dict[str, Any]], baseline: dict[str, Any] | None = None, snapshot_root=None) -> dict[str, Any]:
     baseline = baseline or load_baseline()
-    validate_records(records, baseline)
+    validate_records(records, baseline, snapshot_root)
     query_by_id = {item["id"]: item for item in baseline["queries"]}
     records_by_pair = {(row["provider_id"], row["query_id"]): row for row in records}
     providers = baseline["providers"]
@@ -373,6 +417,18 @@ def evaluate(records: list[dict[str, Any]], baseline: dict[str, Any] | None = No
                 "fallback_status": row.get("fallback_status", "not_attempted"),
             }
 
+    # A failed or unattempted request is missing data, not zero-quality evidence.
+    quality_keys = ("precision_at_5", "strict_precision_at_5", "expected_anchor_recall_at_10",
+                    "matched_anchor_ids", "t1_result_rate", "unique_document_count",
+                    "unresolved_document_identity_count", "duplicate_rate",
+                    "independent_publisher_count", "publisher_groups",
+                    "published_date_coverage", "freshness_compliance", "dated_result_count",
+                    "event_date_accuracy", "event_date_checked_count")
+    for metric in metrics.values():
+        if metric["request_status"] != "success":
+            for key in quality_keys:
+                metric[key] = None
+
     # Compare the paired provider on the same query. Unknown document identities are excluded.
     for provider_id, provider in providers.items():
         peer_ids = [
@@ -387,6 +443,11 @@ def evaluate(records: list[dict[str, Any]], baseline: dict[str, Any] | None = No
                 continue
             this_row = records_by_pair[(provider_id, query["id"])]
             peer_row = records_by_pair[(peer_id, query["id"])]
+            if this_row["request_status"] != "success" or peer_row["request_status"] != "success":
+                metric = metrics[(provider_id, query["id"])]
+                metric["cross_provider_jaccard_overlap"] = None
+                metric["new_publisher_groups_vs_peer"] = None
+                continue
             this_keys = {
                 document_key(result) for result in this_row.get("results", [])
                 if document_key(result) is not None
@@ -431,8 +492,10 @@ def evaluate(records: list[dict[str, Any]], baseline: dict[str, Any] | None = No
             for item in per_query
             if item["request_status"] == "success" and item["freshness_compliance"] is not None
         ]
-        publisher_total = sum(item["independent_publisher_count"] for item in per_query)
-        new_publishers = sum(len(item.get("new_publisher_groups_vs_peer", [])) for item in per_query)
+        successful = [item for item in per_query if item["request_status"] == "success"]
+        publisher_total = sum(item["independent_publisher_count"] for item in successful)
+        paired = [item for item in per_query if item.get("new_publisher_groups_vs_peer") is not None]
+        new_publishers = sum(len(item["new_publisher_groups_vs_peer"]) for item in paired) if paired else None
         provider_rows = [records_by_pair[(provider_id, query["id"])] for query in query_rows]
         summaries[provider_id] = {
             "market": provider["market"],
@@ -442,7 +505,8 @@ def evaluate(records: list[dict[str, Any]], baseline: dict[str, Any] | None = No
             "precision_at_5_macro": ratio(sum(precisions), len(precisions)),
             "strict_precision_at_5_macro": ratio(sum(strict), len(strict)),
             "expected_anchor_recall_macro": ratio(sum(anchors), len(anchors)),
-            "mean_unique_publishers_per_query": round(publisher_total / len(per_query), 3),
+            "mean_unique_publishers_per_query": round(publisher_total / len(successful), 3) if successful else None,
+            "paired_successful_queries": len(paired),
             "new_publisher_groups_vs_peer_total": new_publishers,
             "freshness_compliance_macro": ratio(sum(freshness), len(freshness)),
             "latency_sample_count": len(latency),
@@ -455,7 +519,7 @@ def evaluate(records: list[dict[str, Any]], baseline: dict[str, Any] | None = No
     return {
         "benchmark_id": baseline["benchmark_id"],
         "run_id": records[0]["run_id"] if records else None,
-        "status": "PILOT_EVALUATED",
+        "status": "PILOT_EVALUATED" if all(row["request_status"] == "success" for row in records) else "PILOT_INCOMPLETE",
         "comparison_only": True,
         "winner": None,
         "quality_pass": None,
@@ -477,10 +541,11 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--input", required=True, type=Path, help="Provider result JSONL")
     parser.add_argument("--output", type=Path, help="Optional JSON summary output")
+    parser.add_argument("--snapshot-root", required=True, type=Path, help="Directory containing raw response snapshots")
     parser.add_argument("--baseline", type=Path, default=BASELINE_PATH)
     args = parser.parse_args()
     try:
-        summary = evaluate(_load_records(args.input), load_baseline(args.baseline))
+        summary = evaluate(_load_records(args.input), load_baseline(args.baseline), args.snapshot_root)
     except (OSError, ValueError, KeyError, TypeError) as exc:
         parser.error(str(exc))
     payload = json.dumps(summary, ensure_ascii=False, indent=2)

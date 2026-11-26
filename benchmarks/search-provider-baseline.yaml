@@ -1,4 +1,4 @@
-schema_version: 1
+schema_version: 2
 benchmark_id: dmr-search-provider-cn-global-pilot-2026-11
 status: pilot_spec
 as_of_date: "2026-11-22"
@@ -30,6 +30,8 @@ execution:
     no_broad_or_research_agent: true
     record_provider_native_filters: true
     record_requested_at_utc: true
+    preflight_provider_market_query_limit: true
+    verify_raw_snapshot_file_sha256: true
   cost_policy:
     unknown_is_not_zero: true
     actual_usage_record_required: true

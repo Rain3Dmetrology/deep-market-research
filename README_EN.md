@@ -134,7 +134,7 @@ The skill works with the agent's built-in web tools (WebSearch / WebFetch). Extr
 
 - **FAQ (8 questions)**: see [references/faq.md](references/faq.md)
 - **End-to-end example**: see [references/example.md](references/example.md) (industrial-robotics track research)
-- **Full changelog**: v2.0.0 → v2.9.0 — see [CHANGELOG.md](CHANGELOG.md) (v2.8.0 = audit-fix release)
+- **Full changelog**: v2.0.0 → v2.9.1 — see [CHANGELOG.md](CHANGELOG.md) (v2.8.0 = audit-fix release)
 
 ---
 
@@ -154,3 +154,5 @@ The skill works with the agent's built-in web tools (WebSearch / WebFetch). Extr
 ## 📜 License
 
 [MIT License](LICENSE)
+
+Read-only installation verification: `install.ps1 -Check` / `install.sh --check` compares installed critical contract files to the source and fails on drift.

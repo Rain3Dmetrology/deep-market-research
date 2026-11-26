@@ -263,3 +263,18 @@ Cursor 通过项目根目录 `.cursor/mcp.json` 或全局 `~/.cursor/mcp.json` �
 - 需 key 的工具：key 只存在你本机环境变量 / MCP 配置中，**不要**写进 SKILL.md 或提交到仓库。
 - 本地进程（GPT Researcher / ModelScope 服务端）仅在你本机运行，数据不出本地（若用云端 LLM key 则检索/生成走云端，符合"非涉密"前提）。
 - 涉密 / 隐私敏感调研请走纯本地 LLM（Ollama 等）方案，本技能默认云端路径不假设该场景。
+
+## ResearchTeam 宿主资产映射（非 Provider 排名）
+
+以下仅是既有平台资产名称示例，连接、权限、覆盖、报价均需当次核对；来源选择及回退条件仍由 `data-sources.md` 定义。
+
+| 证据能力 | WorkBuddy 候选资产 | TRAE 候选资产 |
+|---|---|---|
+| 开源技术 | github MCP | GitHub MCP / gh CLI |
+| 中国财经与基金 | westock-mcp / yingmi-mcp | tdx / wind-aifin |
+| 工商风险 | tyc-mcp | tyc（天眼一下） |
+| 法律及专利 | patsnap-search / 北大法宝 | pkulaw；授权专利库或官方原文 |
+| 中文社区及公众号 | 已授权社媒连接器 / wechat-article-search | 同左（若实际可用） |
+| 聚合网关 | AgentEarth / AgentKey（仅当路由允许且明确授权） | 同左 |
+
+未核验的资产不得标记为已连接或可调用。聚合网关按真实上游及具体调用计量，不自动扩大授权。

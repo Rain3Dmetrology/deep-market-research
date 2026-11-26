@@ -1,4 +1,5 @@
 import importlib.util
+import hashlib
 from pathlib import Path
 
 import pytest
@@ -17,6 +18,7 @@ def baseline():
 
 
 def make_record(provider_id, query, results=None, status="success"):
+    filename = f'{provider_id}-{query["id"]}.json'
     return {
         "run_id": "synthetic-run-001",
         "requested_at": "2026-11-22T12:00:00Z",
@@ -24,7 +26,8 @@ def make_record(provider_id, query, results=None, status="success"):
         "query_text": query["query"],
         "provider_id": provider_id,
         "provider_parameters": {},
-        "raw_results_sha256": "a" * 64 if status == "success" else None,
+        "raw_results_sha256": hashlib.sha256(f"synthetic fixture:{filename}".encode()).hexdigest() if status == "success" else None,
+        "raw_results_path": filename if status == "success" else None,
         "request_status": status,
         "latency_ms": 500 if status == "success" else None,
         "result_limit": 10,
@@ -82,6 +85,18 @@ def complete_records():
     return rows
 
 
+def prepare_snapshots(rows, root):
+    for row in rows:
+        path = row.get("raw_results_path")
+        if path:
+            (root / path).write_bytes(f"synthetic fixture:{path}".encode())
+
+
+def evaluate(rows, root, data=None):
+    prepare_snapshots(rows, root)
+    return EVAL.evaluate(rows, data, root)
+
+
 def test_baseline_is_fixed_eight_queries_and_sixteen_requests():
     data = baseline()
     assert len(data["queries"]) == 8
@@ -97,7 +112,7 @@ def test_url_normalization_removes_tracking_and_fragments():
     assert EVAL.normalize_url(url) == "https://example.com/a?id=7"
 
 
-def test_evaluator_computes_precision_and_primary_anchor_recall():
+def test_evaluator_computes_precision_and_primary_anchor_recall(tmp_path):
     data = baseline()
     rows = complete_records()
     row = next(
@@ -110,7 +125,7 @@ def test_evaluator_computes_precision_and_primary_anchor_recall():
         publisher="OPT",
         relevance=2,
     )]
-    summary = EVAL.evaluate(rows, data)
+    summary = evaluate(rows, tmp_path, data)
     metric = summary["query_metrics"]["metaso_web:CN-02"]
     assert metric["expected_anchor_recall_at_10"] == 1.0
     assert metric["precision_at_5"] == 0.2
@@ -119,14 +134,14 @@ def test_evaluator_computes_precision_and_primary_anchor_recall():
     assert summary["quality_pass"] is None
 
 
-def test_unknown_cost_is_not_reported_as_zero():
-    summary = EVAL.evaluate(complete_records())
+def test_unknown_cost_is_not_reported_as_zero(tmp_path):
+    summary = evaluate(complete_records(), tmp_path)
     for provider_summary in summary["provider_summaries"].values():
         assert provider_summary["cost"]["status"] == "unknown_or_mixed"
         assert provider_summary["cost"]["amount"] is None
 
 
-def test_duplicate_urls_and_publishers_are_deduplicated():
+def test_duplicate_urls_and_publishers_are_deduplicated(tmp_path):
     rows = complete_records()
     row = next(
         item for item in rows
@@ -144,36 +159,36 @@ def test_duplicate_urls_and_publishers_are_deduplicated():
             publisher="Keyence Group",
         ),
     ]
-    summary = EVAL.evaluate(rows)
+    summary = evaluate(rows, tmp_path)
     metric = summary["query_metrics"]["octen_search:GL-02"]
     assert metric["unique_document_count"] == 1
     assert metric["duplicate_rate"] == 0.5
     assert metric["independent_publisher_count"] == 1
 
 
-def test_missing_or_duplicate_provider_query_rows_are_rejected():
+def test_missing_or_duplicate_provider_query_rows_are_rejected(tmp_path):
     rows = complete_records()
     with pytest.raises(ValueError, match="Missing"):
-        EVAL.evaluate(rows[:-1])
+        evaluate(rows[:-1], tmp_path)
     with pytest.raises(ValueError, match="Duplicate"):
-        EVAL.evaluate(rows + [rows[0]])
+        evaluate(rows + [rows[0]], tmp_path)
 
 
-def test_successful_request_requires_raw_result_snapshot_hash():
+def test_successful_request_requires_raw_result_snapshot_hash(tmp_path):
     rows = complete_records()
     rows[0]["raw_results_sha256"] = None
     with pytest.raises(ValueError, match="raw_results_sha256"):
-        EVAL.evaluate(rows)
+        evaluate(rows, tmp_path)
 
 
-def test_query_text_must_match_frozen_baseline():
+def test_query_text_must_match_frozen_baseline(tmp_path):
     rows = complete_records()
     rows[0]["query_text"] = "silently modified query"
     with pytest.raises(ValueError, match="exactly match"):
-        EVAL.evaluate(rows)
+        evaluate(rows, tmp_path)
 
 
-def test_failed_request_is_retained_without_results():
+def test_failed_request_is_retained_without_results(tmp_path):
     rows = complete_records()
     failed = next(
         item for item in rows
@@ -182,20 +197,20 @@ def test_failed_request_is_retained_without_results():
     failed["request_status"] = "failed"
     failed["latency_ms"] = 2200
     failed["results"] = []
-    summary = EVAL.evaluate(rows)
+    summary = evaluate(rows, tmp_path)
     provider = summary["provider_summaries"]["exa_search"]
     assert provider["failed_queries"] == 1
     assert provider["successful_queries"] == 3
 
 
-def test_free_confirmed_cost_requires_evidence_and_partial_cost_is_unknown():
+def test_free_confirmed_cost_requires_evidence_and_partial_cost_is_unknown(tmp_path):
     rows = complete_records()
     rows[0]["cost_status"] = "free_confirmed"
     rows[0]["billed_cost"] = 0
     with pytest.raises(ValueError, match="free_confirmed"):
-        EVAL.evaluate(rows)
+        evaluate(rows, tmp_path)
     rows[0]["cost_evidence"] = "Synthetic billing evidence for unit test."
-    summary = EVAL.evaluate(rows)
+    summary = evaluate(rows, tmp_path)
     cost = summary["provider_summaries"]["metaso_web"]["cost"]
     assert cost["status"] == "unknown_or_mixed"
     assert cost["amount"] is None
@@ -213,34 +228,77 @@ def test_evaluator_has_no_network_client_imports():
     assert imported.isdisjoint({"requests", "httpx", "aiohttp", "urllib3", "socket", "http", "ftplib"})
 
 
-def test_sensitive_request_headers_and_tokens_are_rejected():
+def test_sensitive_request_headers_and_tokens_are_rejected(tmp_path):
     rows = complete_records()
     rows[0]["request_headers"] = {"Authorization": "Bearer synthetic"}
     with pytest.raises(ValueError, match="sensitive field"):
-        EVAL.evaluate(rows)
+        evaluate(rows, tmp_path)
 
 
-def test_invalid_latency_and_duplicate_result_ranks_are_rejected():
+def test_invalid_latency_and_duplicate_result_ranks_are_rejected(tmp_path):
     rows = complete_records()
     rows[0]["latency_ms"] = -1
     with pytest.raises(ValueError, match="latency_ms"):
-        EVAL.evaluate(rows)
+        evaluate(rows, tmp_path)
     rows = complete_records()
     duplicate = dict(rows[0]["results"][0])
     duplicate["rank"] = 1
     rows[0]["results"].append(duplicate)
     with pytest.raises(ValueError, match="duplicate result rank"):
-        EVAL.evaluate(rows)
+        evaluate(rows, tmp_path)
 
 
-def test_published_date_coverage_and_freshness_are_separate_metrics():
+def test_published_date_coverage_and_freshness_are_separate_metrics(tmp_path):
     rows = complete_records()
     row = next(
         item for item in rows
         if item["provider_id"] == "metaso_web" and item["query_id"] == "CN-04"
     )
     row["results"][0]["published_at"] = "2025-11-29"
-    summary = EVAL.evaluate(rows)
+    summary = evaluate(rows, tmp_path)
     metric = summary["query_metrics"]["metaso_web:CN-04"]
     assert metric["published_date_coverage"] == 1.0
     assert metric["freshness_compliance"] == 1.0
+
+
+def test_snapshot_missing_and_tampered(tmp_path):
+    rows = complete_records()
+    with pytest.raises(ValueError, match="snapshot missing"):
+        EVAL.evaluate(rows, snapshot_root=tmp_path)
+    prepare_snapshots(rows, tmp_path)
+    (tmp_path / rows[0]["raw_results_path"]).write_bytes(b"tampered")
+    with pytest.raises(ValueError, match="sha256 mismatch"):
+        EVAL.evaluate(rows, snapshot_root=tmp_path)
+
+
+def test_snapshot_root_and_traversal(tmp_path):
+    rows = complete_records()
+    with pytest.raises(ValueError, match="snapshot_root"):
+        EVAL.evaluate(rows)
+    prepare_snapshots(rows, tmp_path)
+    rows[0]["raw_results_path"] = "../outside.json"
+    with pytest.raises(ValueError, match="unsafe"):
+        EVAL.evaluate(rows, snapshot_root=tmp_path)
+
+
+def test_preflight_wrong_market_rejected_before_dispatch():
+    data = baseline()
+    cn = next(q for q in data["queries"] if q["id"] == "CN-01")
+    with pytest.raises(ValueError, match="market mismatch"):
+        EVAL.preflight_request("octen_search", cn["id"], cn["query"], 10, data)
+    EVAL.preflight_request("metaso_web", cn["id"], cn["query"], 10, data)
+
+
+def test_failed_peer_metrics_are_null(tmp_path):
+    rows = complete_records()
+    for r in rows:
+        if r["provider_id"] == "exa_search":
+            r.update(request_status="skipped", results=[], raw_results_path=None, raw_results_sha256=None)
+    result = evaluate(rows, tmp_path)
+    assert result["status"] == "PILOT_INCOMPLETE"
+    assert result["query_metrics"]["exa_search:GL-01"]["precision_at_5"] is None
+    assert result["query_metrics"]["octen_search:GL-01"]["new_publisher_groups_vs_peer"] is None
+    assert result["query_metrics"]["octen_search:GL-01"]["cross_provider_jaccard_overlap"] is None
+    assert result["provider_summaries"]["octen_search"]["paired_successful_queries"] == 0
+    assert result["provider_summaries"]["octen_search"]["new_publisher_groups_vs_peer_total"] is None
+    assert result["provider_summaries"]["exa_search"]["mean_unique_publishers_per_query"] is None
