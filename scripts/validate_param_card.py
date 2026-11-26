@@ -27,6 +27,8 @@ import re
 import sys
 from typing import Dict, List, Tuple, Union
 
+from evidence_contract import evidence_errors
+
 # ---------------------------------------------------------------------------
 # 受限 YAML 子集解析器（仅覆盖 parameter-card-schema.md 规定的构造）
 # 支持：缩进块映射、缩进块序列、序列中的映射项、标量（普通/引号）。不支持锚点/流式/多行。
@@ -71,7 +73,7 @@ def _parse_map(tokens: List[Tuple[int, str]], idx: int, indent: int):
                 result[key] = None
                 idx += 1
         else:
-            result[key] = _strip_quotes(val)
+            result[key] = [] if key == "已收集来源池" and val == "[]" else _strip_quotes(val)
             idx += 1
     return result, idx
 
@@ -132,13 +134,13 @@ def parse_card(text: str) -> dict:
 REQUIRED = ["课题", "范围", "实体清单", "已收集来源池"]
 POOL_SUBFIELDS = ["实体", "源URL", "层级", "日期", "置信"]
 TIERS = {"T1", "T2", "T3", "T4"}
-CONFIDENCE = {"Confirmed", "Corroborated", "Single-source", "Unverified"}
+CONFIDENCE = {"Confirmed", "Corroborated", "Single-source", "Unverified", "Conflicting"}
 TEMPLATES = {"A", "B", "C", "D", "E"}
 STATES = {"drafting", "collecting", "adjudicating", "assembling"}
 RE_DATE = re.compile(r"^\d{4}(?:-(?:0[1-9]|1[0-2])(?:-(?:0[1-9]|[12]\d|3[01]))?)?$")
 
 
-def validate(path: str, strict: bool) -> dict:
+def validate(path: str, strict: bool, require_evidence: bool = False) -> dict:
     try:
         with open(path, "r", encoding="utf-8") as f:
             text = f.read()
@@ -249,6 +251,12 @@ def validate(path: str, strict: bool) -> dict:
         rules.append({"id": "R6-recommended", "desc": "推荐字段（模板/状态/置信）合规", "status": "PASS",
                       "detail": "推荐字段均合规或省略"})
 
+    version = card.get('evidence_contract_version')
+    if require_evidence or version is not None:
+        errs = (['evidence_contract_version must be 1'] if version != '1' else
+                ['source pool must be complete'] if not isinstance(pool, list) or bad_incomplete else evidence_errors(pool))
+        rules.append({'id': 'R7-evidence', 'desc': 'Evidence contract metadata', 'status': 'FAIL' if errs else 'PASS', 'detail': '; '.join(errs) if errs else 'Metadata gate passed; semantic review required'})
+
     coverage = None
     if pool_total > 0:
         coverage = round(pool_complete / pool_total * 100, 1)
@@ -314,10 +322,11 @@ def main(argv=None) -> int:
     p = argparse.ArgumentParser(description="dmr 研究参数卡结构化机检（零依赖，离线安全）")
     p.add_argument("card", help="待检参数卡 yaml 路径")
     p.add_argument("--strict", action="store_true", help="WARN 也视为失败")
+    p.add_argument("--require-evidence", action="store_true", help="Require Evidence Contract v1")
     p.add_argument("--json", action="store_true", help="输出 JSON（供 CI 解析）")
     args = p.parse_args(argv)
 
-    report = validate(args.card, args.strict)
+    report = validate(args.card, args.strict, args.require_evidence)
     if "error" in report:
         sys.stderr.write(render_human(report) + "\n")
         return 2

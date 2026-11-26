@@ -81,7 +81,7 @@ cd deep-market-research
 powershell -ExecutionPolicy Bypass -File install.ps1
 ```
 
-脚本自动检测 `~/.claude`、`~/.codex`、`~/.trae`、`~/.trae-cn`、`~/.qoder`、`~/.workbuddy` 中已存在的目录并安装，未安装的自动跳过。安装后**重启 Agent** 即可加载。
+脚本自动检测 `~/.claude`、`~/.codex`、`~/.trae`、`~/.trae-cn`、`~/.qoder`、`~/.workbuddy` 中已存在的目录并安装，未安装的自动跳过。安装后**重启 Agent** 即可加载。 `install.ps1 -Check` / `install.sh --check` 只读比较关键契约文件与已安装副本，漂移则非零退出。
 
 > **手动安装**：将整个 `deep-market-research/` 文件夹复制到目标平台的 `skills/` 目录。
 
@@ -134,7 +134,7 @@ Skill 本身调用 Agent 内置联网工具（WebSearch / WebFetch）即可工�
 
 - **FAQ（8 问）**：见 [references/faq.md](references/faq.md)
 - **端到端示例**：见 [references/example.md](references/example.md)（工业机器人赛道调研）
-- **完整更新史**：v2.0.0 → v2.9.0 — 见 [CHANGELOG.md](CHANGELOG.md)（v2.8.0 为审计修复发布）
+- **完整更新史**：v2.0.0 → v2.9.1 — 见 [CHANGELOG.md](CHANGELOG.md)（v2.8.0 为审计修复发布）
 
 ---
 

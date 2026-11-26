@@ -46,11 +46,28 @@
 | `源URL` | 来源 URL 或 DOI | 非空（URL/DOI 均可） |
 | `层级` | 源分级 | **必须 ∈ {T1,T2,T3,T4}** |
 | `日期` | 采集/发布日期 | **格式 YYYY / YYYY-MM / YYYY-MM-DD** |
-| `置信` | 置信标签 | 推荐 ∈ {Confirmed,Corroborated,Single-source,Unverified}；非集合内值 → WARN |
+| `置信` | 置信标签 | 推荐 ∈ {Confirmed,Corroborated,Single-source,Unverified,Conflicting}；非集合内值 → WARN |
 
 > 「来源池跨阶段复用」机制要求：各阶段（Phase 1–5）优先消耗池中证据，新采集源必须回写此池（实体/源URL/层级/日期/置信），后续裁决与汇编环节只从此池取数。
 
 ---
+
+## Evidence Contract v1
+
+新研究使用顶层 `evidence_contract_version: 1`，来源池保留原五字段，并增加下列标量；旧卡仍可读取，但仅通过旧结构检查，不证明证据独立性。新运行使用 `--require-evidence`。
+
+| 字段 | 语义 |
+|---|---|
+| `claim_id` | 稳定事实单元 ID；同一主张的置信标签和 claim_kind 一致 |
+| `claim_kind` | normal / key_parameter；Confirmed 分别要求 2 / 3 独立 T1–T3 支持 |
+| `document_id` / `canonical_url` | 原始文档标识与规范化原文地址 |
+| `publisher_group` / `upstream_group` | 发布机构与原始证据链/数据集；未知写 unknown，不填搜索品牌 |
+| `stance` | support / refute / context；未裁决实质反证须保留 |
+| `provenance_verified` | true / false；采集者核对原文及传播关系后填写 |
+| `published_at` / `retrieved_at` | ISO 日期，发布时间允许 unknown，获取日期必填 |
+| `content_hash` | 已保存内容 SHA256；否则 unknown，不伪造 |
+
+同一主张中共享文档、规范 URL、内容哈希、发布机构或原始证据链的支持记录合并（含传递重合）；归属未知或未经核实的记录不贡献独立 Confirmed 计数。同域不自动否定独立，不同域亦不证明独立。尚未解决的 T1–T3 反证禁止 Confirmed；保留 Conflicting/Unverified 和矛盾台账。新证据允许降级或撤销。机检仅检查元数据与数量，不能验证原文真假、语义相关性或归属是否填写正确。
 
 ## 二、格式规范（受限 YAML 子集，可被 validate_param_card.py 解析）
 
@@ -58,7 +75,7 @@
 - 顶层字段缩进 0；`范围`/`已收集来源池` 等块的下级缩进 2；来源池条目内字段缩进 4。
 - 列表项以 `- ` 开头（实体清单缩进 2；来源池条目缩进 2，其内字段缩进 4）。
 - 注释以 `#` 起头（整行）；内联注释不支持。
-- 标量：普通文本、单/双引号均可；布尔/数字按字符串处理。
+- 标量：普通文本、单/双引号均可；布尔/数字按字符串处理；空来源池使用 `已收集来源池: []`。
 
 ### 规范样例（可作为模板直接复制）
 ```yaml
@@ -104,5 +121,6 @@ python scripts/validate_param_card.py <卡片.yaml> [--strict] [--json]
 - 退出码：0=通过（无 FAIL；WARN 不致命除非 --strict）/ 1=未通过 / 2=用法或解析错误。
 - 校验项：R0 必含字段 / R1 范围非空 / R2 实体清单非空 / R3 已收集来源池条目完整性 / R4 层级∈T1-T4 / R5 日期格式 / R6 置信标签（WARN 级）。
 - `验收标准`（推荐字段）：校验器不做内容规则校验（R0–R6 不变），含该字段的卡片照常 PASS（未知字段不拒绝）。
+- R7：声明 v1 或启用 `--require-evidence` 时检查证据元数据、独立组数量和未决反证；缺少必需版本则 FAIL。
 - 覆盖率：来源池条目完整率（完整条目数 / 条目总数）。
 - 脚本缺失或环境无 Python → 跳过，绝不阻断 dmr 主管线。

@@ -15,7 +15,7 @@
 
 每个 Provider 对其市场的 4 个 query 各搜索一次，每次最多返回 10 个结果。首轮不测 Search1API、Tavily、SerpAPI 或 Firecrawl；这些是缺口驱动的条件补充，不扩大首轮矩阵。
 
-**能力与可调用性边界：**当前 ChatGPT 会话有 Octen / Exa 连接器，没有可直接调用的 Metaso / Bocha 工具。因此本会话不能声称已完成 CN Provider 实测。CN 两家需在 DMR 宿主已连接的 Provider 环境执行。无论在哪里执行，都保存同一份 JSONL Run Record。
+**能力与可调用性边界：**按实际宿主配置与授权核验，不把候选目录视为可调用。此前 Octen/CN 错配且响应未完整归档的运行属于 INVALID_RUN，仅作诊断，不能复用其授权额度。
 
 ## 2. 固定查询集
 
@@ -34,7 +34,7 @@
 
 ## 3. 请求参数约束
 
-- 使用 YAML 中完全相同的 query 文本；不能按 Provider 改写成不同意思。
+- 调用前必须从冻结 YAML 生成 Provider/query 配对并调用 `preflight_request(provider_id, query_id, query_text, result_limit)`；市场错配或原文不符立即拒绝，不能先请求后纠错。当前评估器不发网络请求，实际调用端仍须接入此门禁。
 - 每次请求 result_limit = 10，只使用普通 Web Search 能力。
 - Metaso 使用 webpage scope；不得混入 Document / Scholar AI 答案模式。
 - Bocha 使用普通 Web Search，不使用 AI Search 答案模式或额外 Reranker。
@@ -83,7 +83,9 @@
       "requested_at": "2026-11-22T12:00:00Z",
       "query_id": "CN-01",
       "provider_id": "metaso_web",
+      "query_text": "<从冻结 YAML 原样复制>",
       "provider_parameters": {},
+      "raw_results_path": "metaso_web-CN-01.json",
       "raw_results_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
       "request_status": "success",
       "latency_ms": 820,
@@ -113,26 +115,22 @@
       ]
     }
 
-以上是字段结构示例，不是实际 Provider 结果。不要保存 Authorization、Cookie、API key、完整请求头或不必要的原始响应。原始结果可另存脱敏文件并记录 SHA-256。
+以上是字段结构示例，不是实际 Provider 结果。不要保存 Authorization、Cookie、API key、完整请求头或不必要的原始响应。每个成功请求必须先将完整响应保存在受保护的本地快照目录，以独立相对路径 `raw_results_path` 及真实文件 SHA-256 入账。禁止截断、手工补造哈希或复用其他请求文件。只记录非敏感字段；若必须脱敏，则注明快照是完整脱敏响应而非原始 REST 字节。评估器复算文件哈希但不能证明响应真实性或人工标注正确。
+
+离线执行：`python scripts/evaluate_search_benchmark.py --input run.jsonl --snapshot-root <snapshot-dir> --output summary.json`。
 
 ## 6. 完成与晋级门槛
 
-**Pilot 完成：**
+**Pilot 记录完整性：**
 - 16 个请求都有一行记录；失败、跳过也如实记录。
 - 每个成功结果的前 5 条都完成人工相关性标注。
 - 金标准命中、publisher_group、日期与成本均有核验依据；未知值不补猜。
 - 评估脚本报告每 Provider / 每 query 指标、请求失败和跨 Provider 重复命中。
+- 失败或跳过时质量指标及缺失配对的对照指标为 null；报告 paired_successful_queries。任一请求未成功，状态为 PILOT_INCOMPLETE；全部成功且快照验证通过才标 PILOT_EVALUATED。
 - 不产生自动 winner / quality-pass 结论。
 
 **晋级为默认优先 Provider：**这 8 条 Pilot query 只用于初筛，不足以证明长期质量优势。只有候选在至少 20 条独立固定查询、不同时间复跑后，持续提高相关性和独立发布者覆盖，同时成本、延迟和失败率满足预算，才可考虑调整默认路由。
 
-## 7. 当前执行授权状态
+## 7. 执行授权
 
-| Provider | 当前可调用性 | 提议请求数 | 授权状态 |
-|---|---|---:|---|
-| Metaso Web | 本会话没有直连工具；需 DMR 宿主连接 | 4 | 待单独授权 |
-| Bocha Web | 本会话没有直连工具；需 DMR 宿主连接 | 4 | 待单独授权 |
-| Octen Search | 本会话有连接器 | 4 | 待单独授权 |
-| Exa Search | 本会话有连接器 | 4 | 待单独授权 |
-
-没有逐 Provider 的请求次数和成本上限前，不发起可能计费请求。当前阶段只完成基准设计和离线评分器，不把协议握手或文档检索写成真实搜索质量通过。
+仅在新一轮明确批准各 Provider 次数、费用上限及可控计价后发起真实请求。此前 INVALID_RUN 的调用不得重置或隐式重跑；P0 离线测试不消耗 Provider 额度。

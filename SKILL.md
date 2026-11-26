@@ -2,7 +2,7 @@
 name: deep-market-research
 slug: deep-market-research
 displayName: Deep Market Research
-version: "2.9.0"
+version: "2.9.1"
 summary: 深度市场 / 竞品 / 技术趋势调研工作流，输出稳定、可复现、带引用溯源的研究报告。
 description: |
   深度市场 / 竞品 / 技术趋势调研工作流，输出稳定、可复现、带引用溯源的研究报告。
@@ -25,14 +25,14 @@ compatibility: >
   degrade gracefully when absent. See references/cross-platform-tools.md for per-platform setup.
   HONESTY RULE: only list skills/connectors actually available in the environment.
 metadata:
-  version: "2.9.0"
+  version: "2.9.1"
   author: "Rain / WorkBuddy"
   adapted_from: "sota-research + RSSnewsnowTrendRadar + 行业趋势深度调研 + 公司竞品深度调研 + market-researcher + material-organizer + llm-wiki + NATO Admiralty + Cat-Research。详见 references/optional-modules.md。"
 ---
 
 # Deep Market Research Workflow -- 深度市场调研工作流
 
-> 版本: 2.9.0 | 许可证: MIT
+> 版本: 2.9.1 | 许可证: MIT
 > 设计目标：**输出质量稳定、可复现、去重去旧去假去矛盾、并吸收真实用户热评**。
 
 ---
@@ -73,12 +73,14 @@ metadata:
 
 每条发现/结论必须带一个标签：
 
-- **Confirmed** -- >=2 个独立 Tier 1-3 源一致确认（**竞品关键参数须 >=3 个独立源**，见质量规则 18）
-- **Corroborated** -- 1 个 Tier 1-3 源 + >=1 个 Tier 4 源旁证，或 2 个 Tier 4 源高度一致
+- **Confirmed** -- >=2 个按证据契约核验独立性的 Tier 1-3 源一致确认（**竞品关键参数须 >=3 个独立源**，见质量规则 18）
+- **Corroborated** -- 有实质旁证但未达 Confirmed 门槛；仅 Tier 4 的匿名线索不作为硬事实
 - **Single-source** -- 仅 1 个 Tier 1-3 源，无旁证（注明"待更多源确认"）
-- **Unverified / Conflicting** -- 无可靠源，或源间矛盾且无法裁决（**显式标注，不强行共识**）
+- **Unverified / Conflicting** -- 无可靠源，或源间矛盾且无法裁决（**显式标注，不强行共识**）。新反证可使结论降级或撤销。采集域、Provider 数与证据独立性不等价；按 `references/parameter-card-schema.md` 的 Evidence Contract v1 记录主张与原始证据。权威单源可准确陈述发布者自身披露，但仍标 Single-source，不等同于独立实测。
 
 ---
+
+运行预算与终态统一见 `references/run-contract.md`（Run Contract v1），新本机运行及团队运行必须遵守；无持久化能力则显式披露。
 
 ## 三、工作流全景图
 
@@ -234,7 +236,7 @@ metadata:
 
 **1 研究参数卡（跨阶段共享上下文）**：从 Step 0 起维护一张结构化参数卡，每次阶段切换时**整卡传递**给下一阶段，避免跨阶段信息丢失。
 
-> **字段定义以 `references/parameter-card-schema.md` 为唯一权威**（调研分析专家团队《研究参数卡》、research-orchestrator `run-manifest.json` 参数卡快照 均引用此 schema，杜绝三重字段定义漂移）。必含字段：`课题` / `范围` / `实体清单` / **`已收集来源池`**（强制，跨阶段复用唯一证据入口）；推荐：`决策用途` / `模板` / `状态` / `语言` / `查询类型` / **`验收标准`**（可验证目标清单，每条含度量锚点）。可用 `python scripts/validate_param_card.py <卡片.yaml>` 在深度研究启动前（Step 0 / Phase 1 入口）做前置机检（零依赖、离线安全）。
+> **字段定义以 `references/parameter-card-schema.md` 为唯一权威**（调研分析专家团队《研究参数卡》、research-orchestrator `run-manifest.json` 参数卡快照 均引用此 schema，杜绝三重字段定义漂移）。必含字段：`课题` / `范围` / `实体清单` / **`已收集来源池`**（强制，跨阶段复用唯一证据入口）；推荐：`决策用途` / `模板` / `状态` / `语言` / `查询类型` / **`验收标准`**（可验证目标清单，每条含度量锚点）。新参数卡声明 `evidence_contract_version: 1`；有 Python 时在 Step 0/Phase 1 入口和终稿前运行 `python scripts/validate_param_card.py <卡片.yaml> --require-evidence --strict`。无文件/工具能力时执行同构人工检查并披露机检未执行；不得把旧卡结构通过等同证据独立性通过。
 
 > **验收先行与终止条件（plan-first）**：Step 0 收敛范围时同步产出「验收标准（可验证目标，每条含度量锚点）」，随参数卡整卡传递，终稿对抗审计与 lint 自检逐条对照。终止条件三态枚举（**内嵌语义，不新增循环**）：**达标即停**（验收标准全过即收敛，禁止画蛇添足）/ **预算耗尽即停**（触发预算上限即按降级路径交付骨架＋披露）/ **最多 N 轮即停**（达到上限后停止；若验收标准尚未全部满足，将未通过项与当前完成度显式列入「遗留问题」并披露，禁止强制通过，也不得把未解决问题改写成建议项）。
 
@@ -340,7 +342,7 @@ metadata:
 18. 竞品关键参数单源下定论 -> **定价 / 版本号 / MCP 支持 / 许可证 / 收购归属**等可量化事实，交叉验证源数须 **>=3 个独立源**。
 19. 把可选工具当质量前提 -> 可选工具**只丰富素材来源，不是质量必需**。
 20. 绑定特定平台机制 -> 本技能**不假设任何平台的 MCP 配置文件、agent-team 编排协议或专有后端存在**——多智能体编排由上层编排层（如 RAT）承担，本内核保持协议无关。
-21. "独立源"未定义导致交叉验证虚高 -> 独立性判定3条规则：
+21. "独立源"未定义导致交叉验证虚高 -> 按 Evidence Contract v1 核验，以下为典型规则：
     a. 引用链去重：若源B的报道明确引用源A的内容，则A+B视为1个独立源（非2个）。
     b. 通讯社转载去重：同一通讯社（Reuters/AP/Xinhua等）的多家媒体转载视为1个独立源。
     c. 企业自述区分：企业官方公告/财报/官网为Tier 1一手源，但企业自述的竞品信息（如"竞品X市场份额为Y%"）降为Tier 3并需第三方验证。
@@ -370,7 +372,7 @@ metadata:
 | `references/faq.md` | 常见问题（8 问） |
 | `references/example.md` | 端到端完整示例（工业机器人赛道调研） |
 | `references/parameter-card-schema.md` | 研究参数卡结构化 schema 唯一权威（含 `验收标准` 推荐字段） |
-| `CHANGELOG.md` | 完整更新史（v2.0.0 -> v2.9.0） |
+| `CHANGELOG.md` | 完整更新史（v2.0.0 -> v2.9.1） |
 | `benchmarks/industrial-vision-baseline.md` | 5 题固定基准集（工业视觉域）+ Q6 销售路由回归题 + 季度分数演化记录 |
 | `sources.registry.yaml` | 信源注册表（default / optional / deprecated 三层） |
 | `scripts/source_health.py` | 信源健康监控 + 静态 PR 一致性门禁 |
